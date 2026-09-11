@@ -1,0 +1,24 @@
+services:
+  backup:
+    image: ktx/backup:REPLACE_RELEASE
+    container_name: ktx-backup-01
+    hostname: ktx-backup-01
+    restart: unless-stopped
+    volumes:
+      - /srv/ktx/sites:/source/sites:ro
+      - /srv/ktx/platform:/source/platform:ro
+      - /srv/ktx/data/uptime-01:/source/uptime:ro
+      - /srv/ktx/data/vaultwarden-01:/source/vaultwarden:ro
+      - /srv/ktx/data/rustdesk-01:/source/rustdesk:ro
+      - /srv/ktx/data/ssh-01:/source/sshpiper:ro
+      - /srv/ktx/data/proxy-01/acme:/source/proxy-acme:ro
+      - /srv/ktx/backups/staging:/backup-staging
+      - /srv/ktx/backups/restore-work:/restore-work
+      - /srv/ktx/secrets/infrastructure/backup:/run/ktx-secrets:ro
+    networks:
+      - management
+
+networks:
+  management:
+    external: true
+    name: ktx-management

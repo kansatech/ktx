@@ -11,6 +11,7 @@ services:
       - /srv/ktx/sites/REPLACE_SLUG/app:/var/www/html
       - /srv/ktx/sites/REPLACE_SLUG/cron/ktx-site:/etc/cron.d/ktx-site:ro
       - /srv/ktx/sites/REPLACE_SLUG/ssh/hostkeys:/etc/ssh/ktx-hostkeys
+      - /srv/ktx/sites/REPLACE_SLUG/ssh/authorized_keys:/home/site/.ssh/authorized_keys:ro
       - /srv/ktx/secrets/sites/REPLACE_SLUG:/run/ktx-secrets:ro
     networks: [site]
     labels:

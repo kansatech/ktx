@@ -1,0 +1,18 @@
+services:
+  sshpiper:
+    image: ktx/sshpiper:REPLACE_RELEASE
+    container_name: ktx-ssh-01
+    hostname: ktx-ssh-01
+    restart: unless-stopped
+    ports:
+      - "22:2222"
+    volumes:
+      - /srv/ktx/data/ssh-01/workingdir:/var/sshpiper:ro
+      - /srv/ktx/data/ssh-01/hostkeys:/etc/sshpiper
+    networks:
+      - management
+
+networks:
+  management:
+    external: true
+    name: ktx-management

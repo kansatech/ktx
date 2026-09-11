@@ -1,0 +1,15 @@
+services:
+  dockerapi:
+    image: ktx/dockerapi:REPLACE_RELEASE
+    container_name: ktx-dockerapi-01
+    hostname: ktx-dockerapi-01
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - control
+
+networks:
+  control:
+    external: true
+    name: ktx-control

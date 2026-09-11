@@ -16,7 +16,7 @@ attach() {
   echo "  add  $c"; docker network connect "$net" "$c"
 }
 
-mapfile -t nets < <(docker network ls --format '{{.Name}}' | grep '^ktx-site-' | sort)
+mapfile -t nets < <(docker network ls --format '{{.Name}}' | grep -E '^ktx-(site|app)-' | sort)
 for net in "${nets[@]}"; do
   echo "Reconciling $net"
   want "$net" ktx.proxy    && attach "$net" ktx-proxy-01

@@ -1,0 +1,16 @@
+services:
+  log:
+    image: ktx/log:REPLACE_RELEASE
+    container_name: ktx-log-01
+    hostname: ktx-log-01
+    restart: unless-stopped
+    volumes:
+      - /srv/ktx/containers/ktx-log-01/10-ktx-receiver.conf:/etc/rsyslog.d/10-ktx-receiver.conf:ro
+      - /srv/ktx/logs:/var/log/ktx
+    networks:
+      - management
+
+networks:
+  management:
+    external: true
+    name: ktx-management

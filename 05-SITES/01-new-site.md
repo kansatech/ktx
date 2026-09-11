@@ -18,10 +18,12 @@ sudo chmod 0700 /srv/ktx/secrets/sites/example
 Copy `templates/site/manifest.yml.example` to `/srv/ktx/sites/example/manifest.yml` and fill it out.
 
 ## 4. Network
+Use the label-aware helper; the arguments after the slug are database, mail, and SSH booleans:
 ```bash
-docker network create ktx-site-example
+sudo /srv/ktx/platform/templates/scripts/ktx-site-network-create.sh example true true false
+sudo /srv/ktx/platform/templates/scripts/ktx-network-reconcile.sh
 ```
-Attach only needed shared services (proxy always; log normally; DB/mail/SSH only when used).
+This always labels proxy/logging access and attaches DB/mail/SSH only when requested. The reconciliation script reads these labels after infrastructure containers are recreated.
 
 ## 5. Database
 Create `example_app` + unique `example_app` credentials if required. Store password only in site secrets.

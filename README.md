@@ -37,6 +37,7 @@ Each site web container contains Apache, PHP-FPM, Composer, cron, SSH, and log f
 | Build a server from fresh Ubuntu | `01-HOST/01-fresh-install.md` |
 | Understand build/dev/prod differences | `00-START/03-environments.md` |
 | Understand Docker networking | `02-ARCHITECTURE/02-networking.md` |
+| Build/deploy an individual container | `14-BUILD-DEPLOY/README.md` |
 | Add a site after forgetting everything | `05-SITES/01-new-site.md` |
 | Update PHP | `06-LIFECYCLE/04-update-php.md` |
 | Promote build -> dev -> prod | `06-LIFECYCLE/01-build-dev-prod.md` |
@@ -72,5 +73,8 @@ Each site web container contains Apache, PHP-FPM, Composer, cron, SSH, and log f
 - Postfix internal relay
 - rsyslog central collection
 - restic encrypted backups
+- Uptime Kuma monitoring
+- Vaultwarden application service
+- RustDesk Server OSS remote-support infrastructure
 
 See `12-REFERENCE/upstream-sources.md` before any major platform upgrade.

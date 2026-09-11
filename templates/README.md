@@ -1,7 +1,27 @@
-# Templates
+# KTX Templates
 
-These files are reference starting points for the KTX platform. They intentionally contain `REPLACE_*` placeholders and must be reviewed, pinned, and tested on `ktx-build-26` and `ktx-dev-26` before production use.
+These are reference implementation files used by the playbook. They are deliberately split by subsystem.
 
-The handbook is authoritative about lifecycle and architecture; the templates demonstrate the intended shape. Do not treat an example file as a secret-bearing configuration or as a substitute for version-specific upstream documentation.
+## Images
 
-Notably, the restricted Docker API proxy is documented but does not include a fake "secure by default" copy/paste configuration. Its allowed API surface must be validated against the pinned Docker Engine and Traefik versions before release.
+- `images/base`
+- `images/web-php85`
+- `images/proxy`
+- `images/dockerapi`
+- `images/sshpiper`
+- `images/percona84`
+- `images/mail`
+- `images/log`
+- `images/backup`
+- `images/uptime-kuma`
+- `images/rustdesk`
+
+Vaultwarden is built from its pinned upstream source/Docker build recipe rather than a duplicated KTX Dockerfile; see `14-BUILD-DEPLOY/11-vaultwarden.md`.
+
+## Container definitions
+
+`containers/` contains one Compose example per infrastructure/application service. Site containers use `site/compose.yml.example`.
+
+## Rule
+
+Examples contain `REPLACE_*` values. A template is not production configuration until those values have been deliberately reviewed and replaced.

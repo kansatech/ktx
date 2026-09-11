@@ -1,0 +1,17 @@
+services:
+  percona:
+    image: ktx/percona84:REPLACE_RELEASE
+    container_name: ktx-percona-01
+    hostname: ktx-percona-01
+    restart: unless-stopped
+    mem_limit: 1536m
+    volumes:
+      - /srv/ktx/data/percona-01:/var/lib/mysql
+      - /srv/ktx/secrets/infrastructure/percona/root-password:/run/secrets/mysql_root_password:ro
+    networks:
+      - management
+
+networks:
+  management:
+    external: true
+    name: ktx-management

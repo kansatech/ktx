@@ -28,3 +28,18 @@ Re-check current upstream docs during upgrades.
 
 ## PHP 8.5 Ubuntu packaging example
 - https://ppa.launchpadcontent.net/ondrej/php/ubuntu/
+
+
+## Uptime Kuma
+- https://github.com/louislam/uptime-kuma/releases
+- https://github.com/louislam/uptime-kuma/wiki/%F0%9F%94%A7-How-to-Install
+
+## Vaultwarden
+- https://github.com/dani-garcia/vaultwarden/releases
+- https://github.com/dani-garcia/vaultwarden/blob/main/README.md
+- https://github.com/dani-garcia/vaultwarden/blob/main/docker/README.md
+
+## RustDesk Server OSS
+- https://rustdesk.com/docs/en/self-host/rustdesk-server-oss/
+- https://rustdesk.com/docs/en/self-host/rustdesk-server-oss/docker/
+- https://github.com/rustdesk/rustdesk-server/releases

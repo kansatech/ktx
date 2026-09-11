@@ -1,0 +1,17 @@
+services:
+  mail:
+    image: ktx/mail:REPLACE_RELEASE
+    container_name: ktx-mail-01
+    hostname: ktx-mail-01
+    restart: unless-stopped
+    volumes:
+      - /srv/ktx/containers/ktx-mail-01:/ktx-config:ro
+      - /srv/ktx/secrets/infrastructure/mail:/run/ktx-secrets:ro
+      - /srv/ktx/data/mail-01/spool:/var/spool/postfix
+    networks:
+      - management
+
+networks:
+  management:
+    external: true
+    name: ktx-management

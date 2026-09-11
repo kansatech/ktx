@@ -9,9 +9,9 @@ Run:
 sudo /srv/ktx/platform/templates/scripts/ktx-network-reconcile.sh
 ```
 
-The script reads **labels on each `ktx-site-*` network** to determine which shared services belong there. It does not blindly attach every service to every site.
+The script reads **labels on each `ktx-site-*` or `ktx-app-*` network** to determine which shared services belong there. It does not blindly attach every service to every site.
 
-Site-network labels used by the template:
+Network labels used by the templates:
 ```text
 ktx.proxy=true
 ktx.database=true|false

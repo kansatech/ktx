@@ -1,0 +1,2 @@
+# Upstream relay credentials. Protect this file mode 0600.
+[smtp.example-provider.com]:587 USERNAME:REPLACE_PASSWORD

@@ -16,3 +16,15 @@
 | Check RAM | `07-OPERATIONS/05-capacity.md` |
 | Ports | `12-REFERENCE/ports.md` |
 | Paths | `12-REFERENCE/paths.md` |
+
+## Build/deploy a service
+
+- Container build/deploy index: `14-BUILD-DEPLOY/README.md`
+- Traefik: `14-BUILD-DEPLOY/03-proxy-traefik.md`
+- Percona: `14-BUILD-DEPLOY/06-percona.md`
+- Mail: `14-BUILD-DEPLOY/07-mail-postfix.md`
+- Logging: `14-BUILD-DEPLOY/08-central-logging.md`
+- Restic: `14-BUILD-DEPLOY/09-backup-restic.md`
+- Uptime Kuma: `14-BUILD-DEPLOY/10-uptime-kuma.md`
+- Vaultwarden: `14-BUILD-DEPLOY/11-vaultwarden.md`
+- RustDesk: `14-BUILD-DEPLOY/12-rustdesk.md`

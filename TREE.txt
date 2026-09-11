@@ -1,10 +1,10 @@
-+ 00-START
++- 00-START
   - 01-system-at-a-glance.md
   - 02-naming.md
   - 03-environments.md
   - 04-principles.md
   - 05-decisions.md
-+ 01-HOST
++- 01-HOST
   - 01-fresh-install.md
   - 02-filesystem.md
   - 03-docker.md
@@ -12,7 +12,7 @@
   - 05-host-ssh.md
   - 06-patching-reboot.md
   - 07-first-deployment.md
-+ 02-ARCHITECTURE
++- 02-ARCHITECTURE
   - 01-container-catalog.md
   - 02-networking.md
   - 03-storage.md
@@ -20,7 +20,7 @@
   - 05-resource-sizing.md
   - 06-dependencies.md
   - 07-site-manifest.md
-+ 03-IMAGES
++- 03-IMAGES
   - 01-philosophy.md
   - 02-web-image.md
   - 03-percona-image.md
@@ -29,7 +29,7 @@
   - 06-mail-image.md
   - 07-logging-image.md
   - 08-backup-image.md
-+ 04-SERVICES
++- 04-SERVICES
   - 01-traefik.md
   - 02-docker-api-proxy.md
   - 03-sshpiper.md
@@ -38,7 +38,10 @@
   - 06-logging.md
   - 07-uptime.md
   - 08-health-checks.md
-+ 05-SITES
+  - 09-vaultwarden.md
+  - 10-rustdesk.md
+  - 11-backup-restic.md
++- 05-SITES
   - 01-new-site.md
   - 02-site-layout.md
   - 03-dns-tls.md
@@ -50,7 +53,7 @@
   - 09-maintenance.md
   - 10-special-runtime.md
   - 11-retire-site.md
-+ 06-LIFECYCLE
++- 06-LIFECYCLE
   - 01-build-dev-prod.md
   - 02-release-versioning.md
   - 03-promote.md
@@ -59,7 +62,7 @@
   - 06-update-docker-host.md
   - 07-batch-deploy.md
   - 08-rollback.md
-+ 07-OPERATIONS
++- 07-OPERATIONS
   - 01-daily.md
   - 02-weekly.md
   - 03-monthly.md
@@ -69,7 +72,7 @@
   - 07-network-reconcile.md
   - 08-common-commands.md
   - 09-change-management.md
-+ 08-BACKUP
++- 08-BACKUP
   - 01-policy.md
   - 02-database.md
   - 03-files.md
@@ -78,7 +81,7 @@
   - 06-restore-database.md
   - 07-disaster-recovery.md
   - 08-restore-testing.md
-+ 09-SECURITY
++- 09-SECURITY
   - 01-threat-model.md
   - 02-production-hardening.md
   - 03-container-hardening.md
@@ -87,7 +90,7 @@
   - 06-supply-chain.md
   - 07-incident-response.md
   - 08-compromised-site.md
-+ 10-TROUBLESHOOTING
++- 10-TROUBLESHOOTING
   - 01-site-down.md
   - 02-proxy-tls.md
   - 03-database.md
@@ -96,14 +99,14 @@
   - 06-disk.md
   - 07-memory.md
   - 08-network.md
-+ 11-CHECKLISTS
++- 11-CHECKLISTS
   - incident.md
   - new-host.md
   - new-site.md
   - release-dev.md
   - release-prod.md
   - restore.md
-+ 12-REFERENCE
++- 12-REFERENCE
   - README.md
   - containers.md
   - environment-variables.md
@@ -112,53 +115,125 @@
   - paths.md
   - ports.md
   - upstream-sources.md
-+ 13-ENVIRONMENTS
++- 13-ENVIRONMENTS
   - build.md
   - dev.md
   - prod.md
++- 14-BUILD-DEPLOY
+  - 01-base-image.md
+  - 02-web-site.md
+  - 03-proxy-traefik.md
+  - 04-docker-api-proxy.md
+  - 05-sshpiper.md
+  - 06-percona.md
+  - 07-mail-postfix.md
+  - 08-central-logging.md
+  - 09-backup-restic.md
+  - 10-uptime-kuma.md
+  - 11-vaultwarden.md
+  - 12-rustdesk.md
+  - README.md
+- CHANGELOG.md
+- MANIFEST.json
 - QUICK-LOOKUP.md
 - README.md
-+ templates
+- TREE.txt
+- VALIDATION.md
+- VERSION
++- templates
   - README.md
-  + host
+  +- backup
+    - ktx-backup.sh.example
+  +- containers
+    +- backup
+      - compose.yml.example
+    +- dockerapi
+      - compose.yml.example
+    +- log
+      - compose.yml.example
+    +- mail
+      - compose.yml.example
+    +- percona
+      - compose.yml.example
+    +- proxy
+      - compose.yml.example
+    +- rustdesk
+      - compose.yml.example
+    +- sshpiper
+      - compose.yml.example
+    +- uptime-kuma
+      - compose.yml.example
+    +- vaultwarden
+      - compose.yml.example
+  +- host
     - daemon.json.example
-  + images
-    + base
+    - logrotate-ktx.example
+  +- images
+    +- backup
       - Dockerfile
-    + web-php85
+      - ktx-backup.sh
+      - ktx-restic.sh
+    +- base
       - Dockerfile
-      + apache
+    +- dockerapi
+      - Dockerfile
+      - entrypoint.sh
+      - nginx.conf
+    +- log
+      - Dockerfile
+    +- mail
+      - Dockerfile
+      - entrypoint.sh
+    +- percona84
+      - Dockerfile
+      - entrypoint.sh
+      - mysqld.cnf
+    +- proxy
+      - Dockerfile
+    +- rustdesk
+      - Dockerfile
+      - supervisord.conf
+    +- sshpiper
+      - Dockerfile
+    +- uptime-kuma
+      - Dockerfile
+    +- web-php85
+      - Dockerfile
+      +- apache
         - 000-default.conf
-      + health
+      +- health
         - index.html
-      + php
+      +- php
         - zz-ktx.conf
-      + rsyslog
+      +- rsyslog
         - 50-ktx-forward.conf
-      + ssh
+      +- ssh
         - 10-ktx-site.conf
-      + supervisor
+      +- supervisor
         - ktx.conf
-  + postfix
+  +- postfix
     - main.cf.example
-  + proxy
+    - sasl_passwd.example
+    - sender_relay.example
+  +- proxy
     - traefik.yml.example
-  + releases
+  +- releases
     - manifest.json.example
-  + rsyslog
+  +- rsyslog
     - receiver.conf.example
-  + scripts
+  +- scripts
+    - ktx-app-network-create.sh
     - ktx-network-reconcile.sh
     - ktx-site-network-create.sh
-  + site
+  +- site
     - compose.yml.example
-    + cron
+    +- cron
       - ktx-site.example
     - manifest.yml.example
-  + sshpiper
-    + example
+  +- sshpiper
+    +- example
       - README.md
       - sshpiper_upstream
-  + systemd
+  +- systemd
     - ktx-backup.service.example
     - ktx-backup.timer.example

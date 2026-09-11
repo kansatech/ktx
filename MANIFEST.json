@@ -1,8 +1,8 @@
 {
   "name": "KTX Container Platform Playbook",
-  "version": "2026.09.10-1",
-  "generated_utc": "2026-09-11T01:34:33.081167+00:00",
-  "file_count": 130,
+  "version": "2026.09.10-2",
+  "packaged_utc": "2026-09-11T02:06:36.405792+00:00",
+  "file_count_excluding_manifest": 181,
   "files": [
     {
       "path": "00-START/01-system-at-a-glance.md",
@@ -171,8 +171,8 @@
     },
     {
       "path": "04-SERVICES/07-uptime.md",
-      "size": 509,
-      "sha256": "3feb3d3295a59c8abcfa08e1ea5558a391c9e6521ca40c6c1ec5911df022cca4"
+      "size": 623,
+      "sha256": "48d233de027e68f426741fdb5de967d0189b7feedf41642caff9516229606eff"
     },
     {
       "path": "04-SERVICES/08-health-checks.md",
@@ -180,9 +180,24 @@
       "sha256": "66f41391af05b878589425035b9cdfbc219bbc56128adaad9da82cd115f3ed8e"
     },
     {
+      "path": "04-SERVICES/09-vaultwarden.md",
+      "size": 487,
+      "sha256": "611451d635ad7114663ed6119dea896f5dafbf4b273bf492bd31cb94ee420a05"
+    },
+    {
+      "path": "04-SERVICES/10-rustdesk.md",
+      "size": 349,
+      "sha256": "ef9ba8a10acfce3f56c82b945a21cfaed285a546afdab46ca5d4a16fb854fe06"
+    },
+    {
+      "path": "04-SERVICES/11-backup-restic.md",
+      "size": 292,
+      "sha256": "9b6a5d65e88106b86d4b434be6c08b32978323b6c9182f5b30445f148fb3ba50"
+    },
+    {
       "path": "05-SITES/01-new-site.md",
-      "size": 1810,
-      "sha256": "2adef5034a145f58bb595dfac1295c817f57d74100d338f8abfa2d5e7241c4c4"
+      "size": 2109,
+      "sha256": "2a59e662bff8f9e5fb7ae486d937b2910f0b81cc12ce2563192cbc24967ab6cd"
     },
     {
       "path": "05-SITES/02-site-layout.md",
@@ -306,8 +321,8 @@
     },
     {
       "path": "07-OPERATIONS/07-network-reconcile.md",
-      "size": 831,
-      "sha256": "08776edab948d4cd786203f5b1a5a17d158b84c7f7f306dae9278155d17684cd"
+      "size": 842,
+      "sha256": "4fa0f126201dedc1e2e3f685f3efe349b29996a563c84ea16d9e5d67bcac8180"
     },
     {
       "path": "07-OPERATIONS/08-common-commands.md",
@@ -476,8 +491,8 @@
     },
     {
       "path": "12-REFERENCE/containers.md",
-      "size": 246,
-      "sha256": "a4434e17f974559cd054625f60b8b4df3b371ec9c632081d217a69e0e742e779"
+      "size": 760,
+      "sha256": "27c01c5332d2159b678485bb06daf7b1701b31b6e2eb98bf1de99d4dcf8ea673"
     },
     {
       "path": "12-REFERENCE/environment-variables.md",
@@ -491,8 +506,8 @@
     },
     {
       "path": "12-REFERENCE/networks.md",
-      "size": 336,
-      "sha256": "44e1675e9cdd919b55d801c948711a237326b32f14b9c46966fc70db55e488e7"
+      "size": 565,
+      "sha256": "e4008f388d33e7cc3a3d50326554249ddb5fc66893419c301eec52a9fb78c09e"
     },
     {
       "path": "12-REFERENCE/paths.md",
@@ -506,8 +521,8 @@
     },
     {
       "path": "12-REFERENCE/upstream-sources.md",
-      "size": 928,
-      "sha256": "8a8d4be70186b55110b6b50ff0f3ad4a1fba4688f442bf86f8e52da970a17301"
+      "size": 1488,
+      "sha256": "993a9cc8bcda7f3bf8fadb1738e4b0975a67f0f7ea0743f2033664e3993fe244"
     },
     {
       "path": "13-ENVIRONMENTS/build.md",
@@ -525,24 +540,159 @@
       "sha256": "7df086b7d621673863d44f5702710f103ce9ad53659b4bcd11b06bf0921502fb"
     },
     {
+      "path": "14-BUILD-DEPLOY/01-base-image.md",
+      "size": 876,
+      "sha256": "a4b1f28076f35692bc97bc4bc9acc2d6f7772993c7acaf0d32e7aa42e951ad7f"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/02-web-site.md",
+      "size": 2730,
+      "sha256": "07d53aa7f8dad343c0ad4f7a5835528e0d03aec2d39971438ef9761da957ee8c"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/03-proxy-traefik.md",
+      "size": 2197,
+      "sha256": "68bc3a77eef55e8fdbd2d897465f4a8f353280796e9696d62954bd64a7d08092"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/04-docker-api-proxy.md",
+      "size": 1672,
+      "sha256": "0284f558350ca8183e35043a56f284282b43b4d0c402a00d96585df4f7bd004d"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/05-sshpiper.md",
+      "size": 2930,
+      "sha256": "acbc207fba876e7ea7c2726b16857c38b9db1313b879ddf89fe10977a6f21f68"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/06-percona.md",
+      "size": 2070,
+      "sha256": "9fe0ef891bcd1202cf2874b209266ef49aa4176da322c33e3e48e00b7e304cef"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/07-mail-postfix.md",
+      "size": 2013,
+      "sha256": "855102f697223abc09adf6fbcc1ab6b26c216cfc5a0d67743619233170c2c0b0"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/08-central-logging.md",
+      "size": 1763,
+      "sha256": "5cf3047437ac8b56db3c46b9829249e0726c8dd760a88460cc17fe4e919555c2"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/09-backup-restic.md",
+      "size": 4393,
+      "sha256": "25ca2ac48377627550d1dff31421a36cd35127dc0174a8e54bd23b502668c046"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/10-uptime-kuma.md",
+      "size": 2812,
+      "sha256": "523e5945246a4c924f0ec96d41b7870555c18250592fe8c991b1d0e3be6c1991"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/11-vaultwarden.md",
+      "size": 4135,
+      "sha256": "50778b6abc9b739c35faa2522c589ea6cf79ae7acedadde17a9736602287777b"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/12-rustdesk.md",
+      "size": 3152,
+      "sha256": "b8fcda435ebc5bfdbd8fab9ff7043e4ec83e3137bb02984a3f40022709dd6700"
+    },
+    {
+      "path": "14-BUILD-DEPLOY/README.md",
+      "size": 2241,
+      "sha256": "b496bfbd6eeb9ddcde78bcdf816db11e581aca2738207c7b30d4ff1c168fd860"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "size": 1151,
+      "sha256": "6e3260847ddf3e149cec010f0d81621541f809c46724b9222333cab9f1740d43"
+    },
+    {
       "path": "QUICK-LOOKUP.md",
-      "size": 748,
-      "sha256": "960a49d6aa58268d192465a2115dc5b210e1ce9e30335088836c94591aba6850"
+      "size": 1219,
+      "sha256": "bbd77e006a92fa2ccbd64a68550905c6eab8d916d805a97d1460bf0fb5f12164"
     },
     {
       "path": "README.md",
-      "size": 3597,
-      "sha256": "20cde61d92d8129c0f8959683f8a5c1dffc651e26dade32814463bf5ca07b315"
+      "size": 3779,
+      "sha256": "d75486e155a965ecc505a3b185e49ec238a32f109394f8307f7285b2269a7a2d"
     },
     {
       "path": "TREE.txt",
-      "size": 3240,
-      "sha256": "ed3f48521f6c1fb70aaf8af6720fbc74472ddb0dd2117164ea9f725feb442397"
+      "size": 4785,
+      "sha256": "0656fc45564936b284a0cbbac28db088490a6c54661525395046d8ca2cb8d98a"
+    },
+    {
+      "path": "VALIDATION.md",
+      "size": 777,
+      "sha256": "8309d748b78d31c7ba5a86220358fff868ccd85ed010e33a5788a5f6358f31ad"
+    },
+    {
+      "path": "VERSION",
+      "size": 13,
+      "sha256": "ac23ee9972ae7443085cbe49546aed6c0a25ded72027a297510fde9f8fb0bbdd"
     },
     {
       "path": "templates/README.md",
-      "size": 708,
-      "sha256": "5e08179071bbbfabc53bfef6f8bd7797c7879c90288439491fbc977de7654a5e"
+      "size": 811,
+      "sha256": "60470b0b34ed96a58591bc0b6fc256817f7d8873bbdaf9aab51d54713a86fe54"
+    },
+    {
+      "path": "templates/backup/ktx-backup.sh.example",
+      "size": 1823,
+      "sha256": "4b3a95a724b21170f19dd07fd9ead18d4ebea18601e442935ea1d72c4316424f"
+    },
+    {
+      "path": "templates/containers/backup/compose.yml.example",
+      "size": 788,
+      "sha256": "c82540d24ee8a0b76d35b1721bb5a06e9e0a4340a6ed5cc23542848bf86e94de"
+    },
+    {
+      "path": "templates/containers/dockerapi/compose.yml.example",
+      "size": 316,
+      "sha256": "d22e53c04546e5dfacc72a241b41ab92b640c103ff56b1c09b539c4e5aef893f"
+    },
+    {
+      "path": "templates/containers/log/compose.yml.example",
+      "size": 385,
+      "sha256": "808918f6301e86062a5d9630a1c9aa23ff5d74eef79df8fd5dfff7682bc8f989"
+    },
+    {
+      "path": "templates/containers/mail/compose.yml.example",
+      "size": 430,
+      "sha256": "b9127f4062b82784bce8feef5a0f2aa4a3a9e854c0b40dcd6350fd0a2d28b865"
+    },
+    {
+      "path": "templates/containers/percona/compose.yml.example",
+      "size": 436,
+      "sha256": "92ab29440beef5ea1ede1ad8d30aa80f592479a1eb03407121e89d838741dae2"
+    },
+    {
+      "path": "templates/containers/proxy/compose.yml.example",
+      "size": 434,
+      "sha256": "079675e7cbdf567f936cc7289244de9555a8ebe4588a417280c43d7c2e4b2c3c"
+    },
+    {
+      "path": "templates/containers/rustdesk/compose.yml.example",
+      "size": 398,
+      "sha256": "1d9fbcbe727ef058c233df1440160b63dbbbf41d2a7f0021f65ee14340e77720"
+    },
+    {
+      "path": "templates/containers/sshpiper/compose.yml.example",
+      "size": 399,
+      "sha256": "09e76e717550ac8c2046f14584e2c63b39dabbb64d5713db8dcfa33c17f953a2"
+    },
+    {
+      "path": "templates/containers/uptime-kuma/compose.yml.example",
+      "size": 718,
+      "sha256": "79f94362132e50a4a9bdd850fcaf7fcc173d8b21f9dce87e46e3414d5a14981e"
+    },
+    {
+      "path": "templates/containers/vaultwarden/compose.yml.example",
+      "size": 1008,
+      "sha256": "1137041b68a4611c0725dc9c35d997e8a8c3edc2d9f686ccb80598b7121f68d0"
     },
     {
       "path": "templates/host/daemon.json.example",
@@ -550,19 +700,109 @@
       "sha256": "021b2a3c1ea16dcde80a58165867c832a05ee516a0e5569eb432c106be91f100"
     },
     {
+      "path": "templates/host/logrotate-ktx.example",
+      "size": 127,
+      "sha256": "9fdcf178f202d992579dae533008507c926976b4348ad2e93e132ce84f672646"
+    },
+    {
+      "path": "templates/images/backup/Dockerfile",
+      "size": 985,
+      "sha256": "a13c6598e0b3641469243485ba4f696cedcb8ea9d93b4a41adf24b74f406b3b5"
+    },
+    {
+      "path": "templates/images/backup/ktx-backup.sh",
+      "size": 1823,
+      "sha256": "4b3a95a724b21170f19dd07fd9ead18d4ebea18601e442935ea1d72c4316424f"
+    },
+    {
+      "path": "templates/images/backup/ktx-restic.sh",
+      "size": 326,
+      "sha256": "2f36906e9e7b1ae05461534e2e03942ce9f18fec95ecb113dfd69cc3cb7c88b7"
+    },
+    {
       "path": "templates/images/base/Dockerfile",
       "size": 312,
       "sha256": "01ddfc7cccb4794d8977c6923e219f84c18a5327228deda25994304a0cae2b5a"
     },
     {
+      "path": "templates/images/dockerapi/Dockerfile",
+      "size": 442,
+      "sha256": "6b897bccae068128b0fcd74f9e68fc0c9c2d0df7de0afe3e2ba4fea6a17dea10"
+    },
+    {
+      "path": "templates/images/dockerapi/entrypoint.sh",
+      "size": 463,
+      "sha256": "9ada237e6d05641e87a90525c70a44294945b95779a776d4d944a5406b005334"
+    },
+    {
+      "path": "templates/images/dockerapi/nginx.conf",
+      "size": 1152,
+      "sha256": "b451e9d9af178576374ca095587611f06f137c98ae1c16337f5f81faa2e6af81"
+    },
+    {
+      "path": "templates/images/log/Dockerfile",
+      "size": 237,
+      "sha256": "04e196ca72f87b7c68faad29d1ba181373548f716821ed6c7aed8180a97490e1"
+    },
+    {
+      "path": "templates/images/mail/Dockerfile",
+      "size": 589,
+      "sha256": "742270195a805ba88fc2bc4db9f4fe5ff0285c9451ef1326f960551ae377a830"
+    },
+    {
+      "path": "templates/images/mail/entrypoint.sh",
+      "size": 417,
+      "sha256": "0030487242e388c3e5f2d09c8ee1b400649ae906c4539f5d50f8f07d7a8b5233"
+    },
+    {
+      "path": "templates/images/percona84/Dockerfile",
+      "size": 1168,
+      "sha256": "1f5a4ffa3c7f0651b9856c8231deb15e515588c8f5ead19a08de447dccefb0f0"
+    },
+    {
+      "path": "templates/images/percona84/entrypoint.sh",
+      "size": 922,
+      "sha256": "cf69cb6d2d1a1b2978bac6746378100b3a1770eb295e7e9356c19fcf98ed9f57"
+    },
+    {
+      "path": "templates/images/percona84/mysqld.cnf",
+      "size": 321,
+      "sha256": "397a63f4087c4b35d238891c6a2a978148d550458c2a3aad548546a14c8146e2"
+    },
+    {
+      "path": "templates/images/proxy/Dockerfile",
+      "size": 838,
+      "sha256": "53572a03c5c115145de40138187a2b76284cd09f387184b44c8d4d6e0cad18e0"
+    },
+    {
+      "path": "templates/images/rustdesk/Dockerfile",
+      "size": 1100,
+      "sha256": "534a45b8a730deefeec70c406d4f83f6eea9f8a7e335f22566f2c6e12dc6e628"
+    },
+    {
+      "path": "templates/images/rustdesk/supervisord.conf",
+      "size": 449,
+      "sha256": "be0abe0637d04310e87178cb4901ab0bc6d757dd39b44bc29ac41722f6a20983"
+    },
+    {
+      "path": "templates/images/sshpiper/Dockerfile",
+      "size": 1066,
+      "sha256": "669a4bb799c3e68e700504f085d6dde1a242e3ee274b38c3f981d6b65d23aba3"
+    },
+    {
+      "path": "templates/images/uptime-kuma/Dockerfile",
+      "size": 1432,
+      "sha256": "375af1a579007c3b43f13ef59820831154cb8d9353f37a80e6a21690b31f4322"
+    },
+    {
       "path": "templates/images/web-php85/Dockerfile",
-      "size": 1582,
-      "sha256": "0c135f32d1395c5e16392746d920dba3131aa384a906606be1d8064402bfc6c1"
+      "size": 1607,
+      "sha256": "58d3505d13eecfad49119201b5d271c76b53589459081c53f08a53c4f1ccc536"
     },
     {
       "path": "templates/images/web-php85/apache/000-default.conf",
-      "size": 436,
-      "sha256": "6432fb274aadec528621358ecfa0498f1d5c2d978ea71d2647957c8f8ead8163"
+      "size": 602,
+      "sha256": "b2f57c2bd684c64f74f4b4da747d695c213cc307a5e3ce7aebe463eeda43d35a"
     },
     {
       "path": "templates/images/web-php85/health/index.html",
@@ -571,8 +811,8 @@
     },
     {
       "path": "templates/images/web-php85/php/zz-ktx.conf",
-      "size": 243,
-      "sha256": "281fef3a9cc5ba87b825a3a2bec43813a95a721dcb5e855b7972c507b4417b94"
+      "size": 311,
+      "sha256": "fcde68f3a28bebb299bcf277ce6a1e8c3b2cb11eecdbaf2faf030d26b1077c0d"
     },
     {
       "path": "templates/images/web-php85/rsyslog/50-ktx-forward.conf",
@@ -591,8 +831,18 @@
     },
     {
       "path": "templates/postfix/main.cf.example",
-      "size": 571,
-      "sha256": "52ebb0ad88e871ac16b0c8148fd45008c1db4951a866f0114d58bc355705a75d"
+      "size": 1038,
+      "sha256": "62f9ee3309e5e3c0ee5dcec0f7d5cd5d3fc1e577cad01833958dc3d0f160ce35"
+    },
+    {
+      "path": "templates/postfix/sasl_passwd.example",
+      "size": 117,
+      "sha256": "aee9af906befcc93198c267967a31cc92e3aa0f4ea0e3604aa5bf9f198586657"
+    },
+    {
+      "path": "templates/postfix/sender_relay.example",
+      "size": 135,
+      "sha256": "4bf5384d7cc33955555a51d076b7e2b941e75b83dc5b8ac86fcce8c37e0327f9"
     },
     {
       "path": "templates/proxy/traefik.yml.example",
@@ -606,13 +856,18 @@
     },
     {
       "path": "templates/rsyslog/receiver.conf.example",
-      "size": 146,
-      "sha256": "8ad3d75f37d7b7eb4c4550abaa369d561ccc45e57c58f84da7819ff877769e96"
+      "size": 278,
+      "sha256": "33fd14040eb4ffb6003ee09095d4b41420b9233a9285ac756acb027da15755ac"
+    },
+    {
+      "path": "templates/scripts/ktx-app-network-create.sh",
+      "size": 441,
+      "sha256": "04e84c25ef5d04b00ef02100b315ee42bf1868cddd7dfaefdc3fae05ecf43990"
     },
     {
       "path": "templates/scripts/ktx-network-reconcile.sh",
-      "size": 1001,
-      "sha256": "cacd0df1e4703ee5e734458446f8a7f540d89aa156f5a85699e211ad9685b3ce"
+      "size": 1010,
+      "sha256": "5308f457d3982832e19255297a07cd77714d82e34ac91bfe0113a11a0db23e88"
     },
     {
       "path": "templates/scripts/ktx-site-network-create.sh",
@@ -621,8 +876,8 @@
     },
     {
       "path": "templates/site/compose.yml.example",
-      "size": 1199,
-      "sha256": "45909cc2084738fa78ffe12ed066932a7fc1f7030dcaa735a0459594fb767dab"
+      "size": 1290,
+      "sha256": "e5759175c4df4d1da65ddeebdb2da1144f1b30a50fc2a4e458766b1f298d8d52"
     },
     {
       "path": "templates/site/cron/ktx-site.example",

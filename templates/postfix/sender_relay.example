@@ -1,0 +1,2 @@
+# sender address/domain                     upstream relay
+@example.com                                [smtp.example-provider.com]:587

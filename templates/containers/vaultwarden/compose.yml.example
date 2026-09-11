@@ -1,0 +1,31 @@
+services:
+  vaultwarden:
+    image: ktx/vaultwarden:REPLACE_RELEASE
+    container_name: ktx-vaultwarden-01
+    hostname: ktx-vaultwarden-01
+    restart: unless-stopped
+    env_file:
+      - /srv/ktx/secrets/infrastructure/vaultwarden/vaultwarden.env
+    environment:
+      DOMAIN: "https://vault.example.com"
+      SIGNUPS_ALLOWED: "false"
+      SMTP_HOST: "ktx-mail-01"
+      SMTP_PORT: "25"
+      SMTP_SECURITY: "off"
+    volumes:
+      - /srv/ktx/data/vaultwarden-01:/data
+    networks:
+      - vaultwarden
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.vaultwarden.rule: "Host(`vault.example.com`)"
+      traefik.http.routers.vaultwarden.entrypoints: "websecure"
+      traefik.http.routers.vaultwarden.tls: "true"
+      traefik.http.routers.vaultwarden.tls.certresolver: "letsencrypt"
+      traefik.http.services.vaultwarden.loadbalancer.server.port: "80"
+      traefik.docker.network: "ktx-app-vaultwarden"
+
+networks:
+  vaultwarden:
+    external: true
+    name: ktx-app-vaultwarden
