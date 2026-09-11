@@ -1,0 +1,17 @@
+# Concept template. Validate against the Postfix version in the KTX image.
+myhostname = ktx-mail-01
+inet_interfaces = all
+inet_protocols = all
+
+# Never publicly publish this relay.
+relayhost = [REPLACE_DEFAULT_UPSTREAM]:587
+
+smtp_sasl_auth_enable = yes
+smtp_tls_security_level = encrypt
+smtp_sasl_tls_security_options = noanonymous
+
+smtp_sender_dependent_authentication = yes
+sender_dependent_relayhost_maps = hash:/etc/postfix/sender_relay
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+
+# Add explicit internal relay/sender restrictions before production use.

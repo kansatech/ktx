@@ -1,0 +1,14 @@
+# Release to Prod Checklist
+- [ ] exact dev-approved bundle copied
+- [ ] checksum verified
+- [ ] image loaded; no rebuild
+- [ ] recent backup
+- [ ] prior image retained
+- [ ] first low-risk batch
+- [ ] site manifests updated
+- [ ] containers recreated, not restarted
+- [ ] health/public/log/resource tests
+- [ ] remaining batches
+- [ ] network reconcile if shared infra recreated
+- [ ] monitoring clean
+- [ ] change record updated

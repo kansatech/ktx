@@ -1,0 +1,5 @@
+module(load="imtcp")
+input(type="imtcp" port="514")
+
+# Replace with templates/rules splitting by host/program/site.
+*.* /var/log/ktx/combined.log

@@ -1,0 +1,20 @@
+# New Host Checklist
+- [ ] Ubuntu 24.04 installed/patched
+- [ ] Correct hostname
+- [ ] Chrony/time healthy
+- [ ] Admin SSH key tested in second session
+- [ ] Prod host admin SSH restricted/separate
+- [ ] `/srv/ktx` layout created
+- [ ] secrets root mode 0700
+- [ ] Docker official repo + Engine + Compose installed
+- [ ] Docker logging config applied
+- [ ] `ktx-control` and `ktx-management` created
+- [ ] firewall/provider rules reviewed
+- [ ] only expected ports listening
+- [ ] platform files installed
+- [ ] correct release imported
+- [ ] infrastructure healthy
+- [ ] network reconciliation tested
+- [ ] backups configured on prod
+- [ ] monitoring configured
+- [ ] reboot test completed

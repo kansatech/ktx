@@ -1,0 +1,13 @@
+# Incident Checklist
+- [ ] contain
+- [ ] preserve evidence/logs
+- [ ] record image/config/state
+- [ ] determine scope
+- [ ] revoke affected access
+- [ ] rotate scoped credentials
+- [ ] patch root cause
+- [ ] rebuild from trusted image
+- [ ] restore/clean data
+- [ ] verify before reopening
+- [ ] monitor
+- [ ] document/update controls

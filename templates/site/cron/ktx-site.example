@@ -1,0 +1,2 @@
+# /etc/cron.d format includes username.
+# */5 * * * * site cd /var/www/html && /usr/bin/php bin/console app:task >> /var/log/ktx-cron.log 2>&1

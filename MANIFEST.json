@@ -1,0 +1,658 @@
+{
+  "name": "KTX Container Platform Playbook",
+  "version": "2026.09.10-1",
+  "generated_utc": "2026-09-11T01:34:33.081167+00:00",
+  "file_count": 130,
+  "files": [
+    {
+      "path": "00-START/01-system-at-a-glance.md",
+      "size": 1460,
+      "sha256": "d28dd5a75f80d3407f82b33efbdd13861de5557ff8026dc37d86e78927fbf33e"
+    },
+    {
+      "path": "00-START/02-naming.md",
+      "size": 771,
+      "sha256": "f7a21cfaaef77f14d1af1f44306aed5b4f30756c7c7b6e12b773c6d1d1610ee6"
+    },
+    {
+      "path": "00-START/03-environments.md",
+      "size": 1317,
+      "sha256": "2c51fa5c696ab0ee17b8210d9568b05e653197b8e7139a95907b40137c873a22"
+    },
+    {
+      "path": "00-START/04-principles.md",
+      "size": 744,
+      "sha256": "01ca822bb24bf6ad311acedcdac9e2e752453bdbcaa47e52b1cb47435dfd8706"
+    },
+    {
+      "path": "00-START/05-decisions.md",
+      "size": 1191,
+      "sha256": "e4834b01f5966d05a61fa5166f630326e32ce56d26c1571b15a020fcf46226d0"
+    },
+    {
+      "path": "01-HOST/01-fresh-install.md",
+      "size": 1978,
+      "sha256": "6fb37c994d9bc54d5835aaf4ce92a8ba986f17c42c96a04c9bd1b48dbb9ee5bd"
+    },
+    {
+      "path": "01-HOST/02-filesystem.md",
+      "size": 1074,
+      "sha256": "a725822be3b12ed9fd3bc6b72172b58a60ee4e0cc1642e08ee454961d8fdf3b4"
+    },
+    {
+      "path": "01-HOST/03-docker.md",
+      "size": 1915,
+      "sha256": "67a2ffd07a299ba4aebe17f0cd9dde66d94a44b5aed4db30b753cd9afae217f9"
+    },
+    {
+      "path": "01-HOST/04-firewall.md",
+      "size": 821,
+      "sha256": "1665d172a88d45b82c9d6ff901f186e0cf32c20e0bf0393b1cbe5f691158f6f0"
+    },
+    {
+      "path": "01-HOST/05-host-ssh.md",
+      "size": 837,
+      "sha256": "0bbba8974fc51f8bfd7b531eeb915fbc0ac061de65623688bdec07cf3a53abaf"
+    },
+    {
+      "path": "01-HOST/06-patching-reboot.md",
+      "size": 629,
+      "sha256": "6d76dbab790f70ae46eb5b24fb0dec04c63e3c1551bd569b522c67bac464b840"
+    },
+    {
+      "path": "01-HOST/07-first-deployment.md",
+      "size": 569,
+      "sha256": "4772330def7ff8f8e116e23df197fb361afe498294bd0156b9659c1cd1b881b0"
+    },
+    {
+      "path": "02-ARCHITECTURE/01-container-catalog.md",
+      "size": 1051,
+      "sha256": "a9241bec0425780c2d088f5789664c6df62ec9bb6f12db67e713c41b41a194e1"
+    },
+    {
+      "path": "02-ARCHITECTURE/02-networking.md",
+      "size": 1514,
+      "sha256": "9156ad4a1cf55f503385665877788d5e837a7f7fc65bf6da8c449a6ba71e8b5a"
+    },
+    {
+      "path": "02-ARCHITECTURE/03-storage.md",
+      "size": 876,
+      "sha256": "a6193e08d9f88043385c4a95186d4e7c4b45b0d46679a11acd4abe8d687c8aa8"
+    },
+    {
+      "path": "02-ARCHITECTURE/04-secrets.md",
+      "size": 845,
+      "sha256": "172aecb071e997fa79a04b4b3412d0b8aa592b59d1be4fb6d833f8e835f05c59"
+    },
+    {
+      "path": "02-ARCHITECTURE/05-resource-sizing.md",
+      "size": 1245,
+      "sha256": "9244f5ad6998e75322b5f02c4771ed79b8f5d75756e2822804c666c2e3c9fd54"
+    },
+    {
+      "path": "02-ARCHITECTURE/06-dependencies.md",
+      "size": 713,
+      "sha256": "abeaefc6db3f8bf113bf877f5689072ded5d1b62321a963c17e05f4b0e5662ac"
+    },
+    {
+      "path": "02-ARCHITECTURE/07-site-manifest.md",
+      "size": 475,
+      "sha256": "9ce5134cad7789286b570315c470a8bf83cf7cf9e45d11b9302cab77832a374e"
+    },
+    {
+      "path": "03-IMAGES/01-philosophy.md",
+      "size": 841,
+      "sha256": "ea4249a1ad36aa3cd4aba8da3a69aa62ea9896861f1aadd36b3215fd20519e6b"
+    },
+    {
+      "path": "03-IMAGES/02-web-image.md",
+      "size": 982,
+      "sha256": "86dfe0383b7892d65a2557b47c3ce141c27b5d5c75ebbbbba442cbbdd3a77588"
+    },
+    {
+      "path": "03-IMAGES/03-percona-image.md",
+      "size": 666,
+      "sha256": "79e690735086199c74606e851941d6edbaef957e4e38ecbd0646d00ecd934835"
+    },
+    {
+      "path": "03-IMAGES/04-proxy-image.md",
+      "size": 746,
+      "sha256": "49eff5671c8706edb9af2681a75f274e79d3897e684a97abd6593ec08a3fd31b"
+    },
+    {
+      "path": "03-IMAGES/05-ssh-image.md",
+      "size": 582,
+      "sha256": "2cdc656506146a12c3337a17ea602ed3ca5851462cfb1b7ab92a9616e49de981"
+    },
+    {
+      "path": "03-IMAGES/06-mail-image.md",
+      "size": 807,
+      "sha256": "12eb676e7eb669c89130be9bde418dfc2041c237e8de1e1d3e690fcc0110a439"
+    },
+    {
+      "path": "03-IMAGES/07-logging-image.md",
+      "size": 686,
+      "sha256": "88261b88fd26d3f68b787900f2307612fd09d3299f8e4091ec1efa51ec53cce2"
+    },
+    {
+      "path": "03-IMAGES/08-backup-image.md",
+      "size": 594,
+      "sha256": "7d98c3be9bc51e8504909bdffefa7f77cc92518c4be25b92d373559c6f474b0c"
+    },
+    {
+      "path": "04-SERVICES/01-traefik.md",
+      "size": 1075,
+      "sha256": "7458efe65ce67d3c07c3e9dbc7fb7728d3f387bcf02c2afa69d79707f8af2354"
+    },
+    {
+      "path": "04-SERVICES/02-docker-api-proxy.md",
+      "size": 678,
+      "sha256": "bf863906fb80c8c8b9bc617d4b210094820927ef0b72657d48d4954d2f7732e3"
+    },
+    {
+      "path": "04-SERVICES/03-sshpiper.md",
+      "size": 673,
+      "sha256": "4b39ef62d37d446a1a1614da8d31b914f628d4249f7a158a0b8f79a68d45e804"
+    },
+    {
+      "path": "04-SERVICES/04-percona.md",
+      "size": 820,
+      "sha256": "b36eda631fbf096b604ba35966d667a57b13abe8b51e7a014cd817d1dcb63f81"
+    },
+    {
+      "path": "04-SERVICES/05-mail.md",
+      "size": 702,
+      "sha256": "0390c424a2e93c6648c3ad77c4ab577a08d3eedfad71ab29dd57e6547127c451"
+    },
+    {
+      "path": "04-SERVICES/06-logging.md",
+      "size": 640,
+      "sha256": "854d52a40a6dac3a97f9c2affcb69807dccda496a32af89eb4ab526f0c911e35"
+    },
+    {
+      "path": "04-SERVICES/07-uptime.md",
+      "size": 509,
+      "sha256": "3feb3d3295a59c8abcfa08e1ea5558a391c9e6521ca40c6c1ec5911df022cca4"
+    },
+    {
+      "path": "04-SERVICES/08-health-checks.md",
+      "size": 524,
+      "sha256": "66f41391af05b878589425035b9cdfbc219bbc56128adaad9da82cd115f3ed8e"
+    },
+    {
+      "path": "05-SITES/01-new-site.md",
+      "size": 1810,
+      "sha256": "2adef5034a145f58bb595dfac1295c817f57d74100d338f8abfa2d5e7241c4c4"
+    },
+    {
+      "path": "05-SITES/02-site-layout.md",
+      "size": 465,
+      "sha256": "4a2159f3320e8948b3dbfe19acc453f0c60c7573d3675d1bd95a597c35a239ca"
+    },
+    {
+      "path": "05-SITES/03-dns-tls.md",
+      "size": 577,
+      "sha256": "633b452e028cbe3f8f478d54e5cdebaa743b7d24d361a3449598825f0f9c31b6"
+    },
+    {
+      "path": "05-SITES/04-ssh.md",
+      "size": 527,
+      "sha256": "60099ced11c643ebf410c835aa35f09ed858b0096988a5d9c78de06a4943c219"
+    },
+    {
+      "path": "05-SITES/05-database.md",
+      "size": 424,
+      "sha256": "3280d6cf95b008fb76f2f4b70664d9abb286ddcd274c0ea95a463f00bdd0918a"
+    },
+    {
+      "path": "05-SITES/06-cron.md",
+      "size": 508,
+      "sha256": "499d69934bb30b694137ddb32ffe8f29339635730ffae48476a48ada61391cac"
+    },
+    {
+      "path": "05-SITES/07-mail.md",
+      "size": 503,
+      "sha256": "36becb52ba11ee8b1cfab7480681ffc9753bde2de46515364b57696ac23259c7"
+    },
+    {
+      "path": "05-SITES/08-php-composer.md",
+      "size": 624,
+      "sha256": "b9ce8b2caaec3bf2f856ef3a33d09b5fd7e90e3113abd0517cb688e237ba3c36"
+    },
+    {
+      "path": "05-SITES/09-maintenance.md",
+      "size": 588,
+      "sha256": "6280a19206b6e049bacee0fa0c71a0d2ffb6f49302b713416213d84c195cbec5"
+    },
+    {
+      "path": "05-SITES/10-special-runtime.md",
+      "size": 521,
+      "sha256": "b0a6b609972f88fceceaad26d42d0e5077e7b107dab425020a6b40de42b3cf93"
+    },
+    {
+      "path": "05-SITES/11-retire-site.md",
+      "size": 548,
+      "sha256": "213e19fedbcc75152139641f5e021ab02a618d3ce58666ae4b104f62f5498bbc"
+    },
+    {
+      "path": "06-LIFECYCLE/01-build-dev-prod.md",
+      "size": 1210,
+      "sha256": "bd0fefa53f5287a42af61af544ebb6803b6c80e24a9ae2627e118c2d7cf50695"
+    },
+    {
+      "path": "06-LIFECYCLE/02-release-versioning.md",
+      "size": 361,
+      "sha256": "87545a6d756064d89a37fe34aefba98c0e883e99b4a7f5d6fce80f2b1293a1e8"
+    },
+    {
+      "path": "06-LIFECYCLE/03-promote.md",
+      "size": 404,
+      "sha256": "b7526aebda678d9580792b576b49c29a64220162252b0571b10678cdf9bdfd66"
+    },
+    {
+      "path": "06-LIFECYCLE/04-update-php.md",
+      "size": 717,
+      "sha256": "3c267a620b05fb4bfb05b1518468a72e90be8489b6af66ca5f1710944e9735c1"
+    },
+    {
+      "path": "06-LIFECYCLE/05-update-runtime.md",
+      "size": 538,
+      "sha256": "421e28b5cdabcae64964a2fb3aab5af6d435ca047d5aae2bd3a5314123563b62"
+    },
+    {
+      "path": "06-LIFECYCLE/06-update-docker-host.md",
+      "size": 565,
+      "sha256": "53dae762b464254069d5dca2fd511f48e82919c780088d19b359f4b9a5d52cb8"
+    },
+    {
+      "path": "06-LIFECYCLE/07-batch-deploy.md",
+      "size": 421,
+      "sha256": "63c502100e37513e49f1a906e126816b5810e0d2d2cb015bf79cf5b4abd7a0ef"
+    },
+    {
+      "path": "06-LIFECYCLE/08-rollback.md",
+      "size": 502,
+      "sha256": "742a42f017286026843e1843b8c1cc015ecb78392de16534054ad55777398e45"
+    },
+    {
+      "path": "07-OPERATIONS/01-daily.md",
+      "size": 422,
+      "sha256": "d3ed876117b2fd07f0eaa5726702e22bf66f63d2fa2af7c4a8f5504030a80e2a"
+    },
+    {
+      "path": "07-OPERATIONS/02-weekly.md",
+      "size": 530,
+      "sha256": "53dab99d61f3e58848a57daea9e9edad65ac29452de363e0bfb1bbba769ee4d6"
+    },
+    {
+      "path": "07-OPERATIONS/03-monthly.md",
+      "size": 556,
+      "sha256": "a6410899658baef7b580cc09bf313fc848ce3af098af90b83c346980bc2b3280"
+    },
+    {
+      "path": "07-OPERATIONS/04-logs.md",
+      "size": 498,
+      "sha256": "ac793b2d5245706ae28f847f956d4e6bbc8d47cb143e6e4b495f954d9e10d5cf"
+    },
+    {
+      "path": "07-OPERATIONS/05-capacity.md",
+      "size": 690,
+      "sha256": "e2eff6748ff91a0f60b4ca2b4f00f06eecfea4b2730c0b947bdf4129ac3402aa"
+    },
+    {
+      "path": "07-OPERATIONS/06-start-stop-recreate.md",
+      "size": 504,
+      "sha256": "56e9621d2910ed5c93a42dcacc77e714cc8b107607a0ebc3c975943a5dd74b37"
+    },
+    {
+      "path": "07-OPERATIONS/07-network-reconcile.md",
+      "size": 831,
+      "sha256": "08776edab948d4cd786203f5b1a5a17d158b84c7f7f306dae9278155d17684cd"
+    },
+    {
+      "path": "07-OPERATIONS/08-common-commands.md",
+      "size": 679,
+      "sha256": "4cac3dc59b4712f45fc880dc7fae1ddc70f41b0717fcf212366ba33be68ffd37"
+    },
+    {
+      "path": "07-OPERATIONS/09-change-management.md",
+      "size": 409,
+      "sha256": "4550fb31b40ed3ea5b9709a308fd6c66a51d8a8f24b2fb0aa78c9902bb4d42fb"
+    },
+    {
+      "path": "08-BACKUP/01-policy.md",
+      "size": 610,
+      "sha256": "923d98a14b694024c29c2f11ef19418fea75abb7ab3bb77321ab4cf0ca56fd9b"
+    },
+    {
+      "path": "08-BACKUP/02-database.md",
+      "size": 702,
+      "sha256": "316f54aa307077c08975b8c5a6543b4aff71fb43b1a36f2da1db8dd57cfaa169"
+    },
+    {
+      "path": "08-BACKUP/03-files.md",
+      "size": 573,
+      "sha256": "2a07479c27ba958e9b4cf4d111fd4bf4fad0a7ba43acda80f1df90c41787c153"
+    },
+    {
+      "path": "08-BACKUP/04-restic.md",
+      "size": 591,
+      "sha256": "a56822b3b2051d7ac0d08c81313debb524eb007cfc20553202b26e044508820e"
+    },
+    {
+      "path": "08-BACKUP/05-restore-one-site.md",
+      "size": 800,
+      "sha256": "c668cacbbabcc16aaa1e2fbe14e1ef631bfa6587e61313cd773729552211fd73"
+    },
+    {
+      "path": "08-BACKUP/06-restore-database.md",
+      "size": 516,
+      "sha256": "15157c4c110f20014d0da7ed9f3d6986672b8397d5050471e1283144de5d116c"
+    },
+    {
+      "path": "08-BACKUP/07-disaster-recovery.md",
+      "size": 1062,
+      "sha256": "ba23d2375baa8c98d2f7cd3880824999244561ac2185b3b64f055cd1c6bc10b5"
+    },
+    {
+      "path": "08-BACKUP/08-restore-testing.md",
+      "size": 442,
+      "sha256": "a2d37ac10ab851801a7c8b51dc057e001bbb2ba031ec3ce80820cc6d0df1478c"
+    },
+    {
+      "path": "09-SECURITY/01-threat-model.md",
+      "size": 699,
+      "sha256": "266a37dec7351867db77583d517780167fbcf8820840d579b633ad978dc7d3ec"
+    },
+    {
+      "path": "09-SECURITY/02-production-hardening.md",
+      "size": 746,
+      "sha256": "32f86ff51bf28d7aea11ac239cf817b3049eaf9b844f4a1fc8c7dff7b46df2d8"
+    },
+    {
+      "path": "09-SECURITY/03-container-hardening.md",
+      "size": 647,
+      "sha256": "5c0c0feafd38da4a149803fdf2034869b33cc386dead367105539fe3d418ad49"
+    },
+    {
+      "path": "09-SECURITY/04-network-isolation.md",
+      "size": 474,
+      "sha256": "f95416c33b810205a8454aaab06ad8cfc3f24587b3b5920942c6922924339889"
+    },
+    {
+      "path": "09-SECURITY/05-ssh-hardening.md",
+      "size": 424,
+      "sha256": "8d39021a76160bd1018e538e3e5f54ac7001b0b670d84e1ee10a9a47bf0202aa"
+    },
+    {
+      "path": "09-SECURITY/06-supply-chain.md",
+      "size": 549,
+      "sha256": "f55445eddeca61c287d71ba19b8b43a70b85e1b4bc486464d40462ab24cbe26f"
+    },
+    {
+      "path": "09-SECURITY/07-incident-response.md",
+      "size": 724,
+      "sha256": "c9d080e75e050329265dd5bd7373b96e98f0027f73d81cd48494d806c562eefb"
+    },
+    {
+      "path": "09-SECURITY/08-compromised-site.md",
+      "size": 723,
+      "sha256": "801f26bee477a89ac163f219391aa13e9950953791a99b083642c4197879a4cc"
+    },
+    {
+      "path": "10-TROUBLESHOOTING/01-site-down.md",
+      "size": 449,
+      "sha256": "aff68392d5df9d6bf7344b038211caf998a920e70507cc8025cb2af3c95c332e"
+    },
+    {
+      "path": "10-TROUBLESHOOTING/02-proxy-tls.md",
+      "size": 424,
+      "sha256": "aefbef0d9e33b907963b11d87f38fa4234cebd5f3418daf4242dfaada8a41910"
+    },
+    {
+      "path": "10-TROUBLESHOOTING/03-database.md",
+      "size": 552,
+      "sha256": "d47e69f5acfba51392aa456f6dd6ce054a14d5964118c519e1c3bddbf222d578"
+    },
+    {
+      "path": "10-TROUBLESHOOTING/04-mail.md",
+      "size": 477,
+      "sha256": "f9f5d033a5f51799a621c7726c03e7fe8533facfde8133ec7ef59333003ef114"
+    },
+    {
+      "path": "10-TROUBLESHOOTING/05-ssh.md",
+      "size": 422,
+      "sha256": "a0d53933f46cf53083ab6c62941db9f7ac2f762ca38c8ba007b0db372a5d2351"
+    },
+    {
+      "path": "10-TROUBLESHOOTING/06-disk.md",
+      "size": 468,
+      "sha256": "fb04cf02b6cbbc59585fc4132dabf5cf3a556cd833f77f89f62c24541fff1357"
+    },
+    {
+      "path": "10-TROUBLESHOOTING/07-memory.md",
+      "size": 519,
+      "sha256": "70677beaa78c2c8129017450825bb0b899a16242e61d6240f98b322f85710ae7"
+    },
+    {
+      "path": "10-TROUBLESHOOTING/08-network.md",
+      "size": 537,
+      "sha256": "db2d435e010088768f491747202f5fb570bee6a57d8027c7db66fb9c2108aab9"
+    },
+    {
+      "path": "11-CHECKLISTS/incident.md",
+      "size": 335,
+      "sha256": "b19ba2cc3cd450683e4b01dad602e99e378ecb5c17f488b18c56752044ae1839"
+    },
+    {
+      "path": "11-CHECKLISTS/new-host.md",
+      "size": 691,
+      "sha256": "1b708729e838358dd4b5efe42249dba9dc0c9f43dd0a917535594cf358eaa422"
+    },
+    {
+      "path": "11-CHECKLISTS/new-site.md",
+      "size": 495,
+      "sha256": "84513a6989f87213a4dfa8ecaeea59d6c2760962d884c6bc2a3c3c2761440d51"
+    },
+    {
+      "path": "11-CHECKLISTS/release-dev.md",
+      "size": 426,
+      "sha256": "2afcf725c2de4989a47b72bb9ebe57638d035d44ebe678b6c546ba074a082199"
+    },
+    {
+      "path": "11-CHECKLISTS/release-prod.md",
+      "size": 431,
+      "sha256": "94f53bc95029de2a25dca3550666804a0aba564b3ad451a39535dd6b25f6c68d"
+    },
+    {
+      "path": "11-CHECKLISTS/restore.md",
+      "size": 341,
+      "sha256": "10335fe5bb7426ba380f8060be4d6d1a6a8a91b3551db3c2dcac15ed559d46f2"
+    },
+    {
+      "path": "12-REFERENCE/README.md",
+      "size": 147,
+      "sha256": "3d41caa87ea2110cc7227009ec5daff5687467541757ddf8862757885070bbcc"
+    },
+    {
+      "path": "12-REFERENCE/containers.md",
+      "size": 246,
+      "sha256": "a4434e17f974559cd054625f60b8b4df3b371ec9c632081d217a69e0e742e779"
+    },
+    {
+      "path": "12-REFERENCE/environment-variables.md",
+      "size": 433,
+      "sha256": "f07433297385d669577eaff4e2f5c5ae6b11826344cff9a27224d05559725a8c"
+    },
+    {
+      "path": "12-REFERENCE/glossary.md",
+      "size": 525,
+      "sha256": "c6a01f313bba2eb23801e1b6667976cdc00be09fb0135d333462f2e65675c833"
+    },
+    {
+      "path": "12-REFERENCE/networks.md",
+      "size": 336,
+      "sha256": "44e1675e9cdd919b55d801c948711a237326b32f14b9c46966fc70db55e488e7"
+    },
+    {
+      "path": "12-REFERENCE/paths.md",
+      "size": 427,
+      "sha256": "0355ebd066756106419360ebd9ab653749d37c1a1d0fed2fcd4fe1628ad539f5"
+    },
+    {
+      "path": "12-REFERENCE/ports.md",
+      "size": 447,
+      "sha256": "6b0fb3034a148940ec52fb5afe3fa9c62ea12c4be3fc0d41b2b0efeb5af6a4bc"
+    },
+    {
+      "path": "12-REFERENCE/upstream-sources.md",
+      "size": 928,
+      "sha256": "8a8d4be70186b55110b6b50ff0f3ad4a1fba4688f442bf86f8e52da970a17301"
+    },
+    {
+      "path": "13-ENVIRONMENTS/build.md",
+      "size": 412,
+      "sha256": "eefbaafad3c225cbc998c0c2fb298ec2c7e58806331bc7160a56fe0911a0970b"
+    },
+    {
+      "path": "13-ENVIRONMENTS/dev.md",
+      "size": 360,
+      "sha256": "f6931cfe9bd65f788f6a51a98aede19863064149d096f6b4e8fce32a62b94dc1"
+    },
+    {
+      "path": "13-ENVIRONMENTS/prod.md",
+      "size": 408,
+      "sha256": "7df086b7d621673863d44f5702710f103ce9ad53659b4bcd11b06bf0921502fb"
+    },
+    {
+      "path": "QUICK-LOOKUP.md",
+      "size": 748,
+      "sha256": "960a49d6aa58268d192465a2115dc5b210e1ce9e30335088836c94591aba6850"
+    },
+    {
+      "path": "README.md",
+      "size": 3597,
+      "sha256": "20cde61d92d8129c0f8959683f8a5c1dffc651e26dade32814463bf5ca07b315"
+    },
+    {
+      "path": "TREE.txt",
+      "size": 3240,
+      "sha256": "ed3f48521f6c1fb70aaf8af6720fbc74472ddb0dd2117164ea9f725feb442397"
+    },
+    {
+      "path": "templates/README.md",
+      "size": 708,
+      "sha256": "5e08179071bbbfabc53bfef6f8bd7797c7879c90288439491fbc977de7654a5e"
+    },
+    {
+      "path": "templates/host/daemon.json.example",
+      "size": 101,
+      "sha256": "021b2a3c1ea16dcde80a58165867c832a05ee516a0e5569eb432c106be91f100"
+    },
+    {
+      "path": "templates/images/base/Dockerfile",
+      "size": 312,
+      "sha256": "01ddfc7cccb4794d8977c6923e219f84c18a5327228deda25994304a0cae2b5a"
+    },
+    {
+      "path": "templates/images/web-php85/Dockerfile",
+      "size": 1582,
+      "sha256": "0c135f32d1395c5e16392746d920dba3131aa384a906606be1d8064402bfc6c1"
+    },
+    {
+      "path": "templates/images/web-php85/apache/000-default.conf",
+      "size": 436,
+      "sha256": "6432fb274aadec528621358ecfa0498f1d5c2d978ea71d2647957c8f8ead8163"
+    },
+    {
+      "path": "templates/images/web-php85/health/index.html",
+      "size": 3,
+      "sha256": "dc51b8c96c2d745df3bd5590d990230a482fd247123599548e0632fdbf97fc22"
+    },
+    {
+      "path": "templates/images/web-php85/php/zz-ktx.conf",
+      "size": 243,
+      "sha256": "281fef3a9cc5ba87b825a3a2bec43813a95a721dcb5e855b7972c507b4417b94"
+    },
+    {
+      "path": "templates/images/web-php85/rsyslog/50-ktx-forward.conf",
+      "size": 338,
+      "sha256": "47849830b63ee1f825389ea9f5713d0d651fb33dd608f5b366ca6c2546c24350"
+    },
+    {
+      "path": "templates/images/web-php85/ssh/10-ktx-site.conf",
+      "size": 236,
+      "sha256": "8e6b48e0b2a8d863406f8292d6ec3ac8bcf64ba805d3297d6786199a057f8f20"
+    },
+    {
+      "path": "templates/images/web-php85/supervisor/ktx.conf",
+      "size": 1160,
+      "sha256": "109713f93623bdbc990e13336e6a4436014db7267061d7cbb2a9b6f4bd3b3abb"
+    },
+    {
+      "path": "templates/postfix/main.cf.example",
+      "size": 571,
+      "sha256": "52ebb0ad88e871ac16b0c8148fd45008c1db4951a866f0114d58bc355705a75d"
+    },
+    {
+      "path": "templates/proxy/traefik.yml.example",
+      "size": 563,
+      "sha256": "f70b4601086b8c41a03d04306e933ac276d095d00414685db11dd03933100f87"
+    },
+    {
+      "path": "templates/releases/manifest.json.example",
+      "size": 416,
+      "sha256": "1fd7dd4a071db0384be0aacf5b7f643f5a1aca9efbb7eb340992c1cb03f1d47b"
+    },
+    {
+      "path": "templates/rsyslog/receiver.conf.example",
+      "size": 146,
+      "sha256": "8ad3d75f37d7b7eb4c4550abaa369d561ccc45e57c58f84da7819ff877769e96"
+    },
+    {
+      "path": "templates/scripts/ktx-network-reconcile.sh",
+      "size": 1001,
+      "sha256": "cacd0df1e4703ee5e734458446f8a7f540d89aa156f5a85699e211ad9685b3ce"
+    },
+    {
+      "path": "templates/scripts/ktx-site-network-create.sh",
+      "size": 481,
+      "sha256": "892d457edea858560fed3dca2240670f9338c569d644ee7a5cce95a975545a90"
+    },
+    {
+      "path": "templates/site/compose.yml.example",
+      "size": 1199,
+      "sha256": "45909cc2084738fa78ffe12ed066932a7fc1f7030dcaa735a0459594fb767dab"
+    },
+    {
+      "path": "templates/site/cron/ktx-site.example",
+      "size": 143,
+      "sha256": "ddcee2fa0ceb056c8409c18935b328df711014a9abfc2b8dddc886588a411854"
+    },
+    {
+      "path": "templates/site/manifest.yml.example",
+      "size": 377,
+      "sha256": "e7399ddbd0d6869b54f56c0b8412e85c545e609709b495c79d6238486758fc15"
+    },
+    {
+      "path": "templates/sshpiper/example/README.md",
+      "size": 251,
+      "sha256": "0e0f7276b283f957a306a9c8ef11aaf7ec05f872edfe3e724c92e36dc224dccc"
+    },
+    {
+      "path": "templates/sshpiper/example/sshpiper_upstream",
+      "size": 29,
+      "sha256": "059fc129d8af260afbc2fb52f5035d01710327aaea1f79e5f53527ae9cc1ac4a"
+    },
+    {
+      "path": "templates/systemd/ktx-backup.service.example",
+      "size": 180,
+      "sha256": "6b121d5df6875fa07f78ea2a11ca71e4f5808986a9e0643738adbbd796cf150a"
+    },
+    {
+      "path": "templates/systemd/ktx-backup.timer.example",
+      "size": 150,
+      "sha256": "4ddc5f8cee13a8310c23851857daf2917c6846b3998ac02f0b9bdad06acea080"
+    }
+  ]
+}

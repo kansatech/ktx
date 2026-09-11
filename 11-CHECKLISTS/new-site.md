@@ -1,0 +1,18 @@
+# New Site Checklist
+- [ ] slug/manifest
+- [ ] persistent paths
+- [ ] protected site secrets
+- [ ] unique DB/user if required
+- [ ] app deployed
+- [ ] site network created with feature labels
+- [ ] network reconciliation run
+- [ ] cron file
+- [ ] SSH route/keys if enabled
+- [ ] immutable image tag in Compose
+- [ ] memory/PID limits
+- [ ] Traefik labels
+- [ ] DNS
+- [ ] HTTPS + HTTP redirect
+- [ ] app/DB/mail/SSH/cron/log tests
+- [ ] backup contains files + DB dump
+- [ ] restore verification
