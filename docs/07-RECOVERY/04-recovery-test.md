@@ -1,15 +1,17 @@
 # Host Recovery Test
 
-Periodically rehearse on a disposable VM/VPS:
+On disposable infrastructure, periodically prove that you can:
 
-- clone a known Host Core tag;
-- complete the `INSTALL.md` flow;
+- create the `ktx` administrator manually;
+- clone/check out the Host Core release;
+- run bootstrap;
 - prove temporary `ktx` password SSH;
-- install a public key;
+- install and prove a workstation public key;
 - run the SSHPiper cutover;
-- prove `ssh ktx@host` after cutover;
-- complete Docker/Traefik/rsyslog setup;
-- restore representative server-local config;
-- restore/recreate at least one module instance.
+- confirm SSHPiper owns public 22 and OpenSSH owns only `127.0.0.1:2222`;
+- confirm `ssh.socket` is inactive;
+- complete Host Core setup;
+- restore the protected server-specific config/secrets needed by your environment;
+- reattach a representative module and route.
 
-Record any undocumented assumption and fix the playbook immediately.
+Record anything that required tribal knowledge and put it back into this repository.

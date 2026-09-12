@@ -7,6 +7,7 @@ Wants=network-online.target
 Type=simple
 User=sshpiper
 Group=sshpiper
+UMask=0077
 ExecStart=/usr/local/libexec/sshpiper/sshpiperd \
   -port 22 \
   -i /srv/ktx/secrets/sshpiper/server_key \

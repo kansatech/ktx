@@ -12,3 +12,5 @@ These are part of Host Core rather than workload modules.
 | Chrony | `chrony.service` | normal NTP behavior | Host time |
 
 Fresh installation/configuration is scripted by `bin/ktx-init`; these documents describe the operating model, not repeated APT steps.
+
+Final KTX state uses `ssh.service` directly; Ubuntu `ssh.socket` activation is disabled after the SSHPiper cutover.

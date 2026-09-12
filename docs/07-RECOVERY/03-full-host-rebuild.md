@@ -1,16 +1,18 @@
 # Full Host Rebuild
 
-A full host rebuild begins from a fresh Ubuntu 24.04 LTS machine.
+A full KTX Host Core rebuild starts from a clean Ubuntu 24.04 LTS host.
 
-1. restore/provider console access;
-2. clone the intended `Kansatech/ktx` tag to `/srv/ktx`;
-3. follow root [`INSTALL.md`](../../INSTALL.md) to establish `ktx` and the SSHPiper-backed SSH path;
-4. restore server-local Host Core `config/` and `secrets/` as appropriate rather than blindly overwriting newly generated SSH state;
-5. restore the network registry and persistent data required by modules;
-6. clone the exact module repositories/tags under `/srv/ktx/images`;
-7. restore instance definitions under `/srv/ktx/containers`;
-8. recreate module workloads according to their own recovery docs;
-9. verify web and SSH routes;
-10. verify backups/monitoring.
+1. restore provider/VM console access;
+2. manually create the sudo-capable `ktx` account with its local password;
+3. clone `Kansatech/ktx` to `/srv/ktx` as `ktx` and check out the required Host Core tag;
+4. follow root [`INSTALL.md`](../../INSTALL.md) through bootstrap, key installation, SSHPiper cutover, and finish;
+5. restore ignored host-specific config/secrets from the protected backup source;
+6. restore/re-clone module repositories under `/srv/ktx/images/`;
+7. restore instance definitions/data according to the individual module recovery procedures;
+8. recreate KTX networks/routes as recorded;
+9. prove public HTTPS and each required SSH route;
+10. run `ktx-host-check` and module-specific verification.
+
+The `ktx` identity itself is a human/host prerequisite, not something reconstructed by `ktx-init`.
 
 Because SSHPiper is in the host administration path, keep provider console access until the entire rebuild has been proven from an external SSH client.

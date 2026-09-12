@@ -40,3 +40,5 @@ and is not a firewall/public listener.
 - Host Core server-local config/secrets backed up;
 - UFW plus provider firewall where available;
 - public services kept pinned and updated through Host Core lifecycle.
+
+- `ssh.socket` is inactive; native `ssh.service` binds only `127.0.0.1:2222`.

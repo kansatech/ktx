@@ -1,16 +1,20 @@
 # New Host Checklist
 
-- [ ] Ubuntu 24.04 LTS and provider console/recovery available
-- [ ] `Kansatech/ktx` cloned to `/srv/ktx`
+- [ ] Fresh Ubuntu 24.04 LTS and provider/VM console available
+- [ ] `ktx` account manually created with a local password
+- [ ] `ktx` is a member of `sudo`
+- [ ] `/srv/ktx` cloned from `Kansatech/ktx` as `ktx`
 - [ ] Correct Host Core tag checked out
 - [ ] `ktx-validate-repo` passes
 - [ ] `ktx-init bootstrap` completed
-- [ ] `ktx` temporary password login tested
-- [ ] Administrator public key installed for `ktx`
-- [ ] Key login tested before SSH cutover
+- [ ] `ktx` temporary password SSH tested
+- [ ] Administrator public key installed
+- [ ] A new key-authenticated `ktx` SSH session tested before cutover
 - [ ] `ktx-init secure-ssh` completed
+- [ ] `sshpiperd` owns public TCP 22
+- [ ] `ssh.socket` inactive/disabled
+- [ ] Native OpenSSH confirmed at `127.0.0.1:2222` only
 - [ ] New `ssh ktx@host` session works through SSHPiper
-- [ ] OpenSSH confirmed loopback-only on `127.0.0.1:2222`
 - [ ] Password SSH disabled
 - [ ] Root SSH disabled
 - [ ] `ktx-init finish` completed

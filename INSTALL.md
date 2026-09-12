@@ -1,12 +1,14 @@
 # Install a New KTX Host
 
-This is the only installation procedure for KTX Host Core. The documents under `docs/` explain architecture, lifecycle, operations, and recovery; they do not duplicate package-install commands.
+This is the single authoritative fresh-host procedure for KTX Host Core. The documents under `docs/` explain architecture, lifecycle, operations, recovery, and module contracts; they intentionally do not repeat the package-install sequence.
+
+KTX currently targets a fresh **Ubuntu 24.04 LTS** host.
 
 ## Before you start
 
-You need a fresh **Ubuntu 24.04 LTS** server and its provider console/recovery access. Keep the original session open until the SSH cutover is proven.
+Have provider/VM console access available and keep the original console/session open until the final SSHPiper-backed SSH login is proven.
 
-Decide the hostname and environment, for example:
+Choose the hostname/environment, for example:
 
 ```text
 ktx-build-26   build
@@ -14,135 +16,179 @@ ktx-dev-26     dev
 ktx-prod-26    prod
 ```
 
-## 1. Get the repository
+## 1. Manually create the KTX administrator
 
-The only packages installed manually are the ones required to clone KTX itself:
+KTX deliberately does **not** create administrator identities. From the initial provider/root console:
 
 ```bash
-sudo apt update
-sudo apt install -y git ca-certificates
-sudo git clone https://github.com/Kansatech/ktx.git /srv/ktx
+apt update
+apt install -y git ca-certificates sudo
+adduser ktx
+usermod -aG sudo ktx
+```
+
+`adduser` prompts you for the local `ktx` password. Keep that password: after SSH becomes key-only it is still the normal password used by `sudo`.
+
+Root will not be a KTX SSH login.
+
+Create `/srv/ktx` for the `ktx` administrator and clone Host Core as that user:
+
+```bash
+install -d -o ktx -g ktx -m 0755 /srv/ktx
+sudo -u ktx git clone https://github.com/Kansatech/ktx.git /srv/ktx
 cd /srv/ktx
-./bin/ktx-validate-repo
+sudo -u ktx ./bin/ktx-validate-repo
 ```
 
-For dev/prod, check out the Host Core tag you intend to deploy before running setup.
+For dev/prod, check out the exact Host Core tag you intend to deploy before continuing.
 
-## 2. Bootstrap the host and create `ktx`
+## 2. Bootstrap the host
 
-Example production host:
+Example:
 
 ```bash
-sudo ./bin/ktx-init bootstrap --hostname ktx-prod-26 --env prod
+sudo ./bin/ktx-init bootstrap --hostname ktx-build-26 --env build
 ```
 
-`bootstrap` installs the normal Host Core dependencies in one pass, initializes `/srv/ktx`, sets UTC/hostname, creates the sudo-capable `ktx` account, and temporarily allows **password SSH for `ktx` only** on port 22.
+`bootstrap` validates the already-existing `ktx` account and sudo membership, then in one pass:
 
-Root SSH is disabled immediately.
+- installs the normal Host Core prerequisites (including Midnight Commander, because civilized servers have `mc`);
+- creates the local `/srv/ktx` runtime layout;
+- sets the hostname and UTC;
+- disables root SSH;
+- temporarily permits password SSH **only** for `ktx` on public TCP 22;
+- enables time synchronization and host logging.
 
-The script prompts you to set the local `ktx` password. That password remains useful for `sudo`, but SSH password authentication will be disabled after the next phase.
+It does not create `ktx`, change its password, or create another administrator.
 
-## 3. Prove the `ktx` account, then install your public key
+## 3. Prove password SSH, install your key, then prove key SSH
 
-**From another terminal on your workstation**, first prove the temporary password login:
+From a **second terminal on your workstation**:
 
 ```bash
 ssh ktx@SERVER
 ```
 
-If you do not already have a key on your workstation:
+Use the `ktx` password created in step 1. Leave your provider/root console and any working SSH session open.
+
+If you need a workstation key:
 
 ```bash
 ssh-keygen -t ed25519 -a 64
 ```
 
-On macOS/Linux (or any workstation with `ssh-copy-id`):
+### Linux/macOS with ssh-copy-id
 
 ```bash
 ssh-copy-id ktx@SERVER
 ```
 
-Then verify that key authentication works:
+### Windows/OpenSSH without ssh-copy-id
 
-```bash
-ssh ktx@SERVER
-```
-
-Do not continue until that login succeeds using your key.
-
-### Windows without `ssh-copy-id`
-
-PowerShell can append your existing public key with:
+For the normal key:
 
 ```powershell
 Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub | ssh ktx@SERVER "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys"
 ```
 
-Then reconnect and verify key login.
+For a specifically named key such as `id_ed25519_ktx`:
+
+```powershell
+Get-Content $env:USERPROFILE\.ssh\id_ed25519_ktx.pub | ssh ktx@SERVER "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys"
+```
+
+Now explicitly prove the key in another new connection. If it is a named key:
+
+```powershell
+ssh ktx@SERVER -i $env:USERPROFILE\.ssh\id_ed25519_ktx
+```
+
+**Do not continue until a new SSH session works with the public key.**
 
 ## 4. Put all public SSH through SSHPiper
 
-From the still-open `ktx` session:
+From the still-open `ktx` session or provider console:
 
 ```bash
 sudo /srv/ktx/bin/ktx-init secure-ssh
 ```
 
-This deliberately changes the path to:
+The final SSH path becomes:
 
 ```text
 Internet :22
-    -> SSHPiper
+    -> native SSHPiper
         -> username ktx
             -> ktx@127.0.0.1:2222
                 -> native OpenSSH
 ```
 
-It also:
+The command:
 
-- installs the pinned SSHPiper release;
-- copies the existing OpenSSH host key to SSHPiper so port 22 keeps the same host identity;
-- creates the SSHPiper `ktx` route;
-- copies your current public key(s) into that downstream route;
-- generates the SSHPiper mapping key used to log into the loopback OpenSSH service;
-- moves OpenSSH to **127.0.0.1:2222 only**;
-- turns SSH password authentication off;
-- starts SSHPiper on public port 22.
+- installs the pinned SSHPiper release and systemd unit;
+- creates the reserved `ktx` SSHPiper route;
+- uses your proven workstation public key(s) for the **client -> SSHPiper** authentication hop;
+- generates a separate SSHPiper mapping key for the **SSHPiper -> OpenSSH** hop and authorizes it for `ktx`;
+- preserves the existing OpenSSH Ed25519 host identity on public TCP 22;
+- disables Ubuntu's `ssh.socket` activation for the final KTX state;
+- binds native OpenSSH directly to **127.0.0.1:2222 only**;
+- disables SSH password authentication;
+- starts SSHPiper as the only public TCP 22 listener.
 
-**Keep your current session open.** Open another terminal and verify the final path:
+There is no public port 2222.
+
+**Keep the old session/console open.** From another terminal prove the final path:
 
 ```bash
 ssh ktx@SERVER
 ```
 
-There is no public admin port 2222. You always connect to port 22 and SSHPiper decides where the username belongs.
+or, for your named key:
+
+```powershell
+ssh ktx@SERVER -i $env:USERPROFILE\.ssh\id_ed25519_ktx
+```
+
+On the server, the final listeners should look conceptually like:
+
+```text
+:22                sshpiperd
+127.0.0.1:2222     sshd
+```
+
+Verify if desired:
+
+```bash
+sudo ss -lntp | grep -E ':(22|2222)\b'
+sudo systemctl status ssh sshpiper --no-pager
+```
 
 ## 5. Finish Host Core
 
-After the new SSHPiper-backed `ktx` login works:
+Only after the final `ssh ktx@SERVER` path works:
 
 ```bash
 sudo /srv/ktx/bin/ktx-init finish --acme-email you@example.com
 ```
 
-`finish` installs/configures the remaining Host Core pieces:
+`finish` installs/configures:
 
 - Docker Engine + Compose plugin from Docker's official Ubuntu repository;
 - pinned native Traefik;
-- native rsyslog receiver and log rotation;
-- Host Core helper command symlinks;
+- native rsyslog receiver/log rotation;
+- KTX command symlinks;
 - UFW baseline;
 - Traefik ACME state/configuration.
 
-The public baseline becomes:
+The public Host Core baseline is:
 
 ```text
-22/tcp   SSHPiper (including host user ktx)
+22/tcp   SSHPiper
 80/tcp   Traefik HTTP/ACME -> HTTPS
 443/tcp  Traefik HTTPS
 ```
 
-OpenSSH `2222/tcp` exists only on `127.0.0.1` and is never opened in the firewall.
+Native OpenSSH `2222/tcp` exists only on `127.0.0.1` and is not a public firewall rule.
 
 ## 6. Verify
 
@@ -164,4 +210,4 @@ The host is now ready for independent KTX module repositories under `/srv/ktx/im
 
 ## Re-running setup
 
-The phases are intentionally explicit. Do not rerun `bootstrap` on an established production server just to update it. Host Core updates follow the lifecycle under `docs/04-LIFECYCLE/`.
+The phases are intentionally explicit. Do not rerun `bootstrap` on an established host just to update it. Host Core updates follow `docs/04-LIFECYCLE/`.

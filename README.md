@@ -2,7 +2,7 @@
 
 `Kansatech/ktx` is the native host framework cloned directly into `/srv/ktx`.
 
-It owns the Ubuntu/Docker host plumbing: **the `ktx` administrator account, SSHPiper, Traefik, rsyslog, firewall policy, deterministic workload networking, Host Core lifecycle, and the contract used by separate KTX module repositories.**
+It owns the Ubuntu/Docker host plumbing: **SSHPiper, Traefik, rsyslog, firewall policy, deterministic workload networking, Host Core lifecycle, and the contract used by separate KTX module repositories.** It expects a human-created sudo-capable `ktx` administrator account; Host Core does not create administrator identities.
 
 It does **not** contain PHP, Percona, Vaultwarden, Uptime Kuma, or other hosted workloads.
 
@@ -21,7 +21,7 @@ Internet :22 -> SSHPiper
                   └── clientb -> workload B
 ```
 
-`root` is never an SSH login. Host OpenSSH is key-only after bootstrap and listens only on loopback. `ktx` is the host administrator and uses `sudo` when root privilege is needed.
+`root` is never an SSH login. Host OpenSSH becomes key-only and loopback-only during the `secure-ssh` cutover. `ktx` is the host administrator and uses `sudo` when root privilege is needed.
 
 ## Repository / installed layout
 

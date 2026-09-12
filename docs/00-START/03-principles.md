@@ -1,7 +1,7 @@
 # Host Core Principles
 
 1. **One authoritative install path.** Fresh-server setup is `INSTALL.md` plus the phased `ktx-init` command; architecture documents do not duplicate package-install recipes.
-2. **SSH first.** Establish the `ktx` administrator, prove the key, then put SSHPiper in front before spending time on Docker or web ingress.
+2. **SSH first.** The human creates the `ktx` administrator, KTX validates it, you prove the key, then SSHPiper goes in front before Docker or web ingress.
 3. **No root SSH.** Humans log in as `ktx` and elevate with sudo.
 4. **One public SSH port.** SSHPiper owns TCP 22 and routes by username, including the reserved `ktx` route back to loopback OpenSSH.
 5. **Native host plumbing, containerized workloads.** Host Core operates the machine; KTX modules are things the machine hosts.

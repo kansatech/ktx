@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026.09.11-r4
+- KTX no longer creates the `ktx` administrator account. Fresh install explicitly requires the human to create `ktx`, set its local password, and add it to `sudo` before cloning Host Core.
+- Added Midnight Commander (`mc`) to the centralized bootstrap dependency set.
+- Kept the package-install sequence centralized: only pre-clone prerequisites remain in `INSTALL.md`; Host Core prerequisites are installed by `ktx-init bootstrap`.
+- Corrected Ubuntu 24.04 OpenSSH handling: final KTX state disables `ssh.socket` activation, enables `ssh.service`, and binds native OpenSSH directly to `127.0.0.1:2222` only.
+- Hardened `secure-ssh` ordering so the SSHPiper unit is installed before listener cutover, loopback OpenSSH is proven before SSHPiper takes public port 22, and listener ownership is validated.
+- Expanded SSH route documentation to explicitly describe the two independent key relationships: workstation -> SSHPiper and SSHPiper mapping key -> upstream SSH account.
+- Documented that `known_hosts-line.txt` is merely ordinary OpenSSH known_hosts-formatted input; `ktx-ssh-route` now accepts stdin (`-`) for authorization/trust input.
+- Documented that normal route/key/known_hosts edits do not require restarting SSHPiper.
+- Reserved `ktx` for the exact host route and prohibited root SSH routes in `ktx-ssh-route`.
+- Expanded SSH troubleshooting/checklists around `ssh.socket`, listener ownership, and public-key failures on either hop.
+
 ## 2026.09.11-r3
 - Replaced the scattered bootstrap procedure with one root `INSTALL.md` and phased `bin/ktx-init` command.
 - Fresh-host package installation is centralized in `ktx-init`; architecture/lifecycle docs no longer repeat APT commands.
