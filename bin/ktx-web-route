@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+import argparse, ipaddress, pathlib, re, sys, os
+
+DIR=pathlib.Path('/srv/ktx/config/traefik/dynamic')
+NAME_RE=re.compile(r'^[a-z0-9][a-z0-9-]{0,62}$')
+HOST_RE=re.compile(r'^(?:\*\.)?(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$')
+
+def path(name): return DIR/f'50-{name}.yml'
+def validate_name(v):
+    if not NAME_RE.match(v): sys.exit('invalid route name')
+def main():
+    if os.geteuid()!=0: sys.exit('ktx-web-route must run as root')
+    ap=argparse.ArgumentParser(); sp=ap.add_subparsers(dest='cmd',required=True)
+    a=sp.add_parser('add'); a.add_argument('name'); a.add_argument('ip'); a.add_argument('port',type=int); a.add_argument('domains',nargs='+')
+    s=sp.add_parser('show'); s.add_argument('name')
+    r=sp.add_parser('remove'); r.add_argument('name')
+    sp.add_parser('list')
+    x=ap.parse_args(); DIR.mkdir(parents=True,exist_ok=True)
+    if x.cmd=='list':
+        for p in sorted(DIR.glob('50-*.yml')): print(p.stem[3:])
+        return
+    validate_name(x.name); p=path(x.name)
+    if x.cmd=='show':
+        if not p.exists(): sys.exit('not found')
+        print(p.read_text(),end=''); return
+    if x.cmd=='remove':
+        if p.exists(): p.unlink()
+        print(f'removed {x.name}'); return
+    ipaddress.ip_address(x.ip)
+    if not (1 <= x.port <= 65535): sys.exit('invalid port')
+    domains=[]
+    for d in x.domains:
+        d=d.lower().rstrip('.')
+        if not HOST_RE.match(d) or d.startswith('*.'):
+            sys.exit(f'invalid/non-baseline hostname: {d}')
+        domains.append(d)
+    rule=' || '.join(f'Host(`{d}`)' for d in domains)
+    txt=f"""http:\n  routers:\n    {x.name}:\n      rule: \"{rule}\"\n      entryPoints:\n        - websecure\n      service: {x.name}\n      tls:\n        certResolver: letsencrypt\n\n  services:\n    {x.name}:\n      loadBalancer:\n        servers:\n          - url: \"http://{x.ip}:{x.port}\"\n"""
+    tmp=p.with_suffix('.tmp'); tmp.write_text(txt); os.chmod(tmp,0o644); os.replace(tmp,p)
+    print(str(p))
+if __name__=='__main__': main()

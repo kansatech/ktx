@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+import argparse, ipaddress, pathlib, re, subprocess, sys, os, shutil
+
+ROOT=pathlib.Path('/srv/ktx/config/sshpiper/routes')
+LOGIN_RE=re.compile(r'^[a-zA-Z0-9._-]{1,64}$')
+USER_RE=re.compile(r'^[a-zA-Z0-9._-]{1,64}$')
+
+def d(login): return ROOT/login
+
+def secure_tree(p):
+    for x in p.iterdir():
+        if x.is_file(): os.chmod(x,0o600)
+    os.chmod(p,0o700)
+    shutil.chown(p,user='sshpiper',group='sshpiper')
+    for x in p.iterdir(): shutil.chown(x,user='sshpiper',group='sshpiper')
+
+def main():
+    if os.geteuid()!=0: sys.exit('ktx-ssh-route must run as root')
+    ap=argparse.ArgumentParser(); sp=ap.add_subparsers(dest='cmd',required=True)
+    i=sp.add_parser('init'); i.add_argument('login'); i.add_argument('upstream_user'); i.add_argument('ip'); i.add_argument('port',type=int)
+    a=sp.add_parser('authorize'); a.add_argument('login'); a.add_argument('keyfile')
+    rv=sp.add_parser('revoke'); rv.add_argument('login'); rv.add_argument('keyfile')
+    t=sp.add_parser('trust'); t.add_argument('login'); t.add_argument('knownhostsfile')
+    s=sp.add_parser('show'); s.add_argument('login')
+    r=sp.add_parser('remove'); r.add_argument('login')
+    sp.add_parser('list')
+    x=ap.parse_args(); ROOT.mkdir(parents=True,exist_ok=True)
+    if x.cmd=='list':
+        for p in sorted(ROOT.iterdir() if ROOT.exists() else []):
+            if p.is_dir(): print(p.name)
+        return
+    if not LOGIN_RE.match(x.login): sys.exit('invalid login')
+    p=d(x.login)
+    if x.cmd=='show':
+        if not p.exists(): sys.exit('not found')
+        print((p/'sshpiper_upstream').read_text().strip() if (p/'sshpiper_upstream').exists() else '(no upstream)')
+        print('authorized_keys:', sum(1 for q in (p/'authorized_keys').read_text().splitlines() if q.strip()) if (p/'authorized_keys').exists() else 0)
+        print('known_hosts:', sum(1 for q in (p/'known_hosts').read_text().splitlines() if q.strip()) if (p/'known_hosts').exists() else 0)
+        print('mapping_pub:', (p/'id_rsa.pub').read_text().strip() if (p/'id_rsa.pub').exists() else '(missing)')
+        return
+    if x.cmd=='remove':
+        if p.exists(): shutil.rmtree(p)
+        print(f'removed {x.login}'); return
+    if x.cmd=='init':
+        if not USER_RE.match(x.upstream_user): sys.exit('invalid upstream user')
+        ipaddress.ip_address(x.ip)
+        if not (1<=x.port<=65535): sys.exit('invalid port')
+        if p.exists() and any(p.iterdir()): sys.exit('route exists')
+        p.mkdir(parents=True,exist_ok=True)
+        (p/'sshpiper_upstream').write_text(f'{x.upstream_user}@{x.ip}:{x.port}\n')
+        (p/'authorized_keys').touch(); (p/'known_hosts').touch()
+        subprocess.run(['ssh-keygen','-q','-t','rsa','-b','4096','-N','','-f',str(p/'id_rsa')],check=True)
+        secure_tree(p)
+        print('mapping public key (install upstream):')
+        print((p/'id_rsa.pub').read_text().strip())
+        return
+    if not p.exists(): sys.exit('route not found; run init first')
+    if x.cmd in ('authorize','revoke'):
+        key=pathlib.Path(x.keyfile).read_text().strip()
+        target=p/'authorized_keys'; lines=[q for q in target.read_text().splitlines() if q.strip()]
+        if x.cmd=='authorize' and key not in lines: lines.append(key)
+        if x.cmd=='revoke': lines=[q for q in lines if q!=key]
+        target.write_text('\n'.join(lines)+('\n' if lines else ''))
+    elif x.cmd=='trust':
+        lines=[q.strip() for q in pathlib.Path(x.knownhostsfile).read_text().splitlines() if q.strip()]
+        if not lines: sys.exit('known_hosts input empty')
+        (p/'known_hosts').write_text('\n'.join(lines)+'\n')
+    secure_tree(p); print('updated')
+if __name__=='__main__': main()

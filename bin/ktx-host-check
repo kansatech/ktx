@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -u
+fail=0
+
+check_service() {
+  local s="$1"
+  if systemctl is-active --quiet "$s"; then printf 'OK   service %-12s active\n' "$s"; else printf 'FAIL service %-12s not active\n' "$s"; fail=1; fi
+}
+
+for s in ssh docker traefik sshpiper rsyslog; do check_service "$s"; done
+
+for p in 22 80 443 514 2222; do
+  if ss -lntH | awk '{print $4}' | grep -Eq "[:.]${p}$"; then printf 'OK   tcp %-4s listening\n' "$p"; else printf 'WARN tcp %-4s not listening\n' "$p"; fi
+done
+
+if docker info >/dev/null 2>&1; then echo 'OK   docker daemon responsive'; else echo 'FAIL docker daemon unavailable'; fail=1; fi
+
+if [ -r /srv/ktx/config/host.conf ]; then echo 'OK   /srv/ktx/config/host.conf readable'; else echo 'FAIL /srv/ktx/config/host.conf missing'; fail=1; fi
+if [ -f /srv/ktx/config/networks.tsv ]; then echo 'OK   network registry present'; else echo 'FAIL network registry missing'; fail=1; fi
+
+exit "$fail"

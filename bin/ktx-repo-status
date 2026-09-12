@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="${KTX_ROOT:-/srv/ktx}"
+
+printf 'KTX checkout: '
+git -C "$ROOT" describe --tags --always --dirty
+
+printf '\nCore working tree:\n'
+git -C "$ROOT" status --short --branch
+
+printf '\nModule repositories under %s/images:\n' "$ROOT"
+found=0
+if [[ -d "$ROOT/images" ]]; then
+  while IFS= read -r -d '' d; do
+    found=1
+    printf '\n[%s]\n' "$(basename "$d")"
+    git -C "$d" status --short --branch || true
+  done < <(find "$ROOT/images" -mindepth 1 -maxdepth 1 -type d -name 'ktx-*' -print0 | sort -z)
+fi
+[[ "$found" -eq 1 ]] || echo "(none)"
