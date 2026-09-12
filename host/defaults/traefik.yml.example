@@ -19,7 +19,7 @@ providers:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: admin@example.com
+      email: __KTX_ACME_EMAIL__
       storage: /srv/ktx/data/traefik/acme.json
       httpChallenge:
         entryPoint: web

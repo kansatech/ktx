@@ -1,44 +1,30 @@
 # Host Patching and Reboot
 
-Ubuntu 24.04 includes unattended-upgrades support. KTX permits automatic security package installation but prefers controlled production reboots.
-
-## Check
-
-```bash
-sudo apt update
-apt list --upgradable
-test -f /var/run/reboot-required && cat /var/run/reboot-required
-```
-
-## Before prod reboot
-
-Confirm:
+Before patching/rebooting production:
 
 ```bash
 sudo ktx-host-check
 sudo docker ps
-sudo docker network ls
-sudo ss -lntup
-df -h
-free -h
+sudo df -h
+sudo free -h
 ```
 
-Also confirm current workload/backups according to their separate template packs.
+Confirm provider console/recovery access is available because normal network administration goes through SSHPiper.
 
-## Reboot
+Patch the host using the normal Ubuntu package lifecycle. Docker Engine and pinned native Traefik/SSHPiper updates follow their Host Core lifecycle documents rather than being casually replaced during unrelated maintenance.
 
-```bash
-sudo reboot
-```
-
-## After reconnecting on admin port 2222
+After reboot:
 
 ```bash
+ssh ktx@SERVER
 sudo ktx-host-check
-sudo docker ps
-sudo ktx-net list
 ```
 
-Then test one known public web route and one public SSH route if those services are enabled.
+Verify in order:
 
-Source: https://documentation.ubuntu.com/security/security-updates/
+1. SSHPiper public port 22;
+2. `ktx` route to loopback OpenSSH;
+3. Docker;
+4. Traefik 80/443;
+5. rsyslog;
+6. workload modules.

@@ -1,20 +1,17 @@
-# Production Host — ktx-prod-26
+# Production Environment
 
-Prod consumes tested Host Core releases.
+Production consumes tested Host Core tags and tested workload-module releases.
 
-- no Go toolchain required;
-- no compiling Host Core binaries;
-- real ACME;
-- public 80/443 and optionally 22;
-- admin 2222 restricted to trusted source/private management;
-- no normal public workload port mappings;
-- no Docker socket access for ingress/workloads;
-- security updates maintained;
-- Host Core config/state included in recovery backup;
-- changes recorded and rollback release retained.
+Public ingress:
 
-If you find yourself SSH'd into prod compiling an ingress binary from GitHub master, the process has already left the road.
-## Git role
+```text
+22/tcp   SSHPiper (including ktx host administration)
+80/tcp   Traefik
+443/tcp  Traefik
+```
 
-Prod checks out an immutable Host Core tag in detached HEAD state. Never track `main` with blind `git pull` deployment. `/srv/ktx/images` may contain module checkouts only when operationally useful; production runtime does not require source trees for every image.
+Native OpenSSH is key-only on `127.0.0.1:2222`; it is never exposed by the provider firewall or UFW.
 
+Production does not normally build workload images. It deploys artifacts/releases already proven on build/dev.
+
+Keep provider console/recovery access available because normal host SSH depends on SSHPiper.

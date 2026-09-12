@@ -1,44 +1,16 @@
 # Full Host Rebuild
 
-This is the blank-VPS / dead-host procedure.
+A full host rebuild begins from a fresh Ubuntu 24.04 LTS machine.
 
-## Required materials
+1. restore/provider console access;
+2. clone the intended `Kansatech/ktx` tag to `/srv/ktx`;
+3. follow root [`INSTALL.md`](../../INSTALL.md) to establish `ktx` and the SSHPiper-backed SSH path;
+4. restore server-local Host Core `config/` and `secrets/` as appropriate rather than blindly overwriting newly generated SSH state;
+5. restore the network registry and persistent data required by modules;
+6. clone the exact module repositories/tags under `/srv/ktx/images`;
+7. restore instance definitions under `/srv/ktx/containers`;
+8. recreate module workloads according to their own recovery docs;
+9. verify web and SSH routes;
+10. verify backups/monitoring.
 
-- Ubuntu 24.04 install/reimage access;
-- administrator SSH key;
-- GitHub access to `Kansatech/ktx`;
-- the exact previously approved Host Core Git tag;
-- approved native binary artifacts or the controlled means to rebuild/fetch them;
-- backup of `/srv/ktx/config`, `/srv/ktx/secrets`, and required data/containers;
-- separate module/workload recovery sets;
-- DNS/provider/firewall access.
-
-## Order
-
-1. install/reimage Ubuntu 24.04;
-2. patch and install Git;
-3. clone:
-   ```bash
-   sudo git clone https://github.com/Kansatech/ktx.git /srv/ktx
-   ```
-4. checkout the previously approved Host Core tag;
-5. run:
-   ```bash
-   sudo /srv/ktx/bin/ktx-init-layout
-   ```
-6. restore server-specific `config/`, `secrets/`, required `data/`, and `containers/`;
-7. configure/verify host administrator sshd;
-8. install Docker;
-9. install/promote the exact approved Traefik/SSHPiper binaries;
-10. run:
-    ```bash
-    sudo /srv/ktx/bin/ktx-apply-host
-    ```
-11. start/verify native Traefik, SSHPiper, and rsyslog;
-12. configure firewall;
-13. recreate deterministic Docker networks from the restored registry;
-14. clone/restore required KTX module repositories under `/srv/ktx/images` as their lifecycle requires;
-15. restore workload instances according to those modules;
-16. verify public ingress and logging.
-
-The Git repository reconstructs the host framework; ignored server state reconstructs this particular host.
+Because SSHPiper is in the host administration path, keep provider console access until the entire rebuild has been proven from an external SSH client.

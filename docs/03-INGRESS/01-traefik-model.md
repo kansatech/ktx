@@ -1,33 +1,21 @@
 # Traefik Ingress Model
 
-Traefik's install configuration is stable host state:
+Traefik runs natively and owns TCP 80/443.
+
+It uses the file provider watching:
 
 ```text
-/srv/ktx/config/traefik/traefik.yml
+/srv/ktx/config/traefik/dynamic
 ```
 
-Workload routing is dynamic host state:
+KTX route tooling creates/removes small dynamic YAML files. Traefik notices them without a service restart and without Docker API/socket access.
+
+Workloads use deterministic private addresses, for example:
 
 ```text
-/srv/ktx/config/traefik/dynamic/*.yml
+example.com -> Traefik -> http://172.28.4.2:8080
 ```
 
-The file provider watches the directory and automatically reloads valid changes. No Traefik restart is required when a future template adds/removes a route.
+TLS/ACME belongs to Traefik; workload containers normally speak plain HTTP on their private KTX network.
 
-## Traffic path
-
-```text
-client -> :443 native Traefik -> private static workload IP:port
-```
-
-## TLS
-
-Traefik owns ACME and certificate renewal. Workloads normally serve plain HTTP on private Docker networks.
-
-## No Docker provider
-
-KTX does not enable Traefik's Docker provider and does not give Traefik `/var/run/docker.sock`.
-
-## Failure boundary
-
-If Traefik is down, public websites are down, but host SSH administration still works on 2222 and workloads remain running privately.
+If Traefik is down, public web routes are down. Host SSH is unaffected because it uses SSHPiper on port 22.

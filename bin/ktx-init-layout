@@ -1,47 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 ROOT="${KTX_ROOT:-/srv/ktx}"
 
-if [[ "$(id -u)" -ne 0 ]]; then
-  echo "ktx-init-layout must run as root" >&2
-  exit 1
-fi
+[[ "$(id -u)" -eq 0 ]] || { echo "ktx-init-layout must run as root" >&2; exit 1; }
+[[ -f "${ROOT}/VERSION" && -d "${ROOT}/docs" ]] || { echo "${ROOT} is not a Kansatech/ktx checkout" >&2; exit 1; }
 
-if [[ ! -f "${ROOT}/VERSION" || ! -d "${ROOT}/docs" ]]; then
-  echo "${ROOT} does not look like a Kansatech/ktx checkout" >&2
-  exit 1
-fi
-
-install -d -m 0755 "${ROOT}/config"
+install -d -m 0755 "${ROOT}/config" "${ROOT}/images" "${ROOT}/containers" "${ROOT}/data" \
+  "${ROOT}/releases" "${ROOT}/recovery" "${ROOT}/tmp" "${ROOT}/cache"
 install -d -m 0700 "${ROOT}/secrets"
-install -d -m 0755 "${ROOT}/images" "${ROOT}/containers" "${ROOT}/data"
 install -d -m 0750 "${ROOT}/logs"
-install -d -m 0755 "${ROOT}/releases" "${ROOT}/recovery" "${ROOT}/tmp" "${ROOT}/cache"
-
-install -d -m 0750 "${ROOT}/config/traefik/dynamic"
-install -d -m 0700 "${ROOT}/config/sshpiper/routes"
-install -d -m 0700 "${ROOT}/secrets/sshpiper"
-install -d -m 0750 "${ROOT}/data/traefik"
-install -d -m 0750 "${ROOT}/logs/traefik" "${ROOT}/logs/remote"
-
-# Some parent filesystems use the setgid bit on directories. Normalize the
-# security-sensitive/runtime directory modes explicitly after creation.
-chmod 0755 "${ROOT}/config" "${ROOT}/images" "${ROOT}/containers" "${ROOT}/data"   "${ROOT}/releases" "${ROOT}/recovery" "${ROOT}/tmp" "${ROOT}/cache"
-chmod 0700 "${ROOT}/secrets" "${ROOT}/config/sshpiper/routes" "${ROOT}/secrets/sshpiper"
-chmod 0750 "${ROOT}/logs" "${ROOT}/config/traefik/dynamic"   "${ROOT}/data/traefik" "${ROOT}/logs/traefik" "${ROOT}/logs/remote"
+install -d -m 0750 "${ROOT}/config/traefik/dynamic" "${ROOT}/data/traefik" \
+  "${ROOT}/logs/traefik" "${ROOT}/logs/remote"
+install -d -m 0700 "${ROOT}/config/sshpiper/routes" "${ROOT}/secrets/sshpiper"
 
 if [[ ! -f "${ROOT}/config/host.conf" ]]; then
   install -m 0644 "${ROOT}/host/defaults/host.conf.example" "${ROOT}/config/host.conf"
-  echo "Created ${ROOT}/config/host.conf from example; edit it before continuing."
-fi
-
-if [[ ! -f "${ROOT}/config/traefik/traefik.yml" ]]; then
-  install -m 0640 "${ROOT}/host/defaults/traefik.yml.example" "${ROOT}/config/traefik/traefik.yml"
-  echo "Created ${ROOT}/config/traefik/traefik.yml from example; set the ACME email before starting Traefik."
 fi
 
 touch "${ROOT}/config/networks.tsv"
 chmod 0644 "${ROOT}/config/networks.tsv"
 
-echo "KTX local layout initialized under ${ROOT}."
+echo "KTX local layout ready under ${ROOT}."

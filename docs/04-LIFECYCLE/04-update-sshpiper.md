@@ -1,14 +1,18 @@
 # Update SSHPiper
 
-1. Review upstream tags/security changes.
-2. Build the exact tag on `ktx-build-26` using the approved Go toolchain.
-3. Test `workingdir` routing, downstream public keys, mapping-key auth, strict host-key validation, SCP/SFTP, and port forwarding if you permit them.
-4. Promote exact binaries to dev, then prod.
-5. Replace binaries atomically.
-6. Restart `sshpiper.service`.
-7. Existing route directories remain in `/srv/ktx/config/sshpiper/routes`.
-8. Verify several routes and inspect logs.
+1. Review the desired SSHPiper release.
+2. Change `SSHPIPER_VERSION` in `host/versions.env` on build.
+3. Install it with:
 
-Do not use a build from `master` as production merely because it compiled successfully.
+   ```bash
+   sudo ./bin/ktx-install-native sshpiper
+   ```
 
-Review upstream advisories; older SSHPiper versions had a proxy-protocol source-address spoofing issue patched in v1.3.0, one reason KTX pins current releases rather than treating SSH infrastructure as set-and-forget.
+4. Test the reserved `ktx` host route plus representative workload routes, public-key authentication, mapping keys, strict host-key checking, and SFTP/SCP where used.
+5. Promote the exact Host Core Git tag to dev, then prod.
+6. On each target, install the pinned release and restart only `sshpiper.service`.
+7. Immediately prove `ssh ktx@host` from a second terminal after a production restart.
+
+Keep provider console access available during any SSHPiper update because it is in the host administration path.
+
+Source: https://github.com/tg123/sshpiper

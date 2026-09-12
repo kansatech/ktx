@@ -9,3 +9,10 @@ Upstream facts in this revision were checked on 2026-09-11.
 - SSHPiper v1.6.1 is a current tagged release; workingdir routes by username and supports authorized_keys, mapping `id_rsa`, and strict known_hosts: https://github.com/tg123/sshpiper/tags and https://pkg.go.dev/github.com/tg123/sshpiper/plugin/workingdir
 - Ubuntu security updates/unattended-upgrades: https://documentation.ubuntu.com/security/security-updates/
 - Go 1.26.8 release history: https://go.dev/doc/devel/release
+## r3 implementation references
+- Docker Engine Ubuntu: https://docs.docker.com/engine/install/ubuntu/
+- Traefik release support: https://doc.traefik.io/traefik/deprecation/releases/
+- Traefik file provider: https://doc.traefik.io/traefik/providers/file/
+- SSHPiper: https://github.com/tg123/sshpiper
+- SSHPiper workingdir plugin: https://pkg.go.dev/github.com/tg123/sshpiper/plugin/workingdir
+

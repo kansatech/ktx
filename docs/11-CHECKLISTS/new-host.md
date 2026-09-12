@@ -1,23 +1,21 @@
 # New Host Checklist
 
-- [ ] Ubuntu 24.04 installed/patched
-- [ ] Correct `ktx-*-26` hostname
-- [ ] Provider console/recovery confirmed
-- [ ] UTC + Chrony healthy
-- [ ] `/srv/ktx` host layout created
+- [ ] Ubuntu 24.04 LTS and provider console/recovery available
 - [ ] `Kansatech/ktx` cloned to `/srv/ktx`
-- [ ] `bin/ktx-init-layout` run
-- [ ] `/srv/ktx/config/host.conf` created
-- [ ] Docker private pool checked for route conflicts
-- [ ] Host OpenSSH moved to 2222 and key login tested in second session
-- [ ] Docker official packages installed
-- [ ] Docker daemon config validated
-- [ ] KTX helper tools installed
-- [ ] Traefik installed from approved release
-- [ ] SSHPiper installed from approved release
-- [ ] rsyslog KTX receiver configured
-- [ ] UFW/provider firewall configured
-- [ ] Only expected public listeners present
+- [ ] Correct Host Core tag checked out
+- [ ] `ktx-validate-repo` passes
+- [ ] `ktx-init bootstrap` completed
+- [ ] `ktx` temporary password login tested
+- [ ] Administrator public key installed for `ktx`
+- [ ] Key login tested before SSH cutover
+- [ ] `ktx-init secure-ssh` completed
+- [ ] New `ssh ktx@host` session works through SSHPiper
+- [ ] OpenSSH confirmed loopback-only on `127.0.0.1:2222`
+- [ ] Password SSH disabled
+- [ ] Root SSH disabled
+- [ ] `ktx-init finish` completed
+- [ ] Docker/Compose healthy
+- [ ] Traefik healthy on 80/443
+- [ ] rsyslog healthy
+- [ ] UFW/provider firewall reviewed
 - [ ] `ktx-host-check` passes
-- [ ] Reboot test passes
-- [ ] Environment-specific document completed

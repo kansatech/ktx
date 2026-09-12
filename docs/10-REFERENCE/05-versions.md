@@ -2,12 +2,19 @@
 
 Verified for this documentation revision: **2026-09-11**.
 
+Tracked pins live in:
+
+```text
+/srv/ktx/host/versions.env
+```
+
+Current baseline:
+
 | Component | Baseline |
 |---|---|
 | Ubuntu | 24.04 LTS |
 | Traefik | 3.7.13 |
 | SSHPiper | 1.6.1 |
-| Go build toolchain | 1.26.8, build host only |
-| Docker Engine | Install approved current Docker CE package from official Ubuntu repo; record exact installed version in release/change record |
+| Docker Engine | approved current Docker CE package from Docker's official Ubuntu repository |
 
-These are starting baselines. Supported/current status must be checked during upgrades.
+Host Core update tooling installs the exact tracked Traefik/SSHPiper release and verifies the upstream release checksum.

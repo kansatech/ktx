@@ -1,6 +1,6 @@
 [Unit]
 Description=KTX SSHPiper SSH ingress
-After=network-online.target docker.service
+After=network-online.target ssh.service
 Wants=network-online.target
 
 [Service]

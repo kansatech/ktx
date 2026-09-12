@@ -1,10 +1,11 @@
-# Native Service Accounts
+# Service Accounts
 
-| Account | Purpose | Shell |
+| Account | Purpose | Interactive login |
 |---|---|---|
-| `traefik` | Traefik daemon, ACME state/logs | nologin |
-| `sshpiper` | SSHPiper daemon and route state | nologin |
-| `syslog` | Ubuntu rsyslog | package-defined |
-| administrator account | human host administration | normal shell + controlled sudo |
+| `ktx` | Human Host Core administrator; sudo-capable | Yes, via SSHPiper route only |
+| `root` | Operating-system superuser used by sudo/system services | No SSH login |
+| `sshpiper` | Native SSHPiper daemon | No |
+| `traefik` | Native Traefik daemon | No |
+| `syslog` | Ubuntu rsyslog | No |
 
-Neither Traefik nor SSHPiper belongs in the `docker` group.
+The `ktx` account keeps a local password for sudo, but final SSH authentication is public-key only.

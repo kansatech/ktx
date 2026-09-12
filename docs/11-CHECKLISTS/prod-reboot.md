@@ -1,15 +1,10 @@
 # Production Reboot Checklist
 
-- [ ] Host admin SSH/provider console available
+- [ ] Provider console/recovery access available
 - [ ] `ktx-host-check` clean before reboot
-- [ ] Disk/memory sane
-- [ ] No known workload restore/migration in progress
-- [ ] Recovery/backup status acceptable according to template packs
-- [ ] Reboot
-- [ ] Reconnect on 2222
-- [ ] `ktx-host-check`
-- [ ] Docker workloads present
-- [ ] Representative web route works
-- [ ] Representative SSH route works
-- [ ] rsyslog receiving
-- [ ] Monitoring/alerts clear
+- [ ] Backups/current change state known
+- [ ] Reboot host
+- [ ] `ssh ktx@SERVER` works through SSHPiper
+- [ ] `ktx-host-check` clean after reboot
+- [ ] Public web routes checked
+- [ ] Representative workload SSH route checked if applicable

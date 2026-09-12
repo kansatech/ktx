@@ -1,24 +1,17 @@
 # Host Core Release Checklist
 
-- [ ] Working tree clean
-- [ ] `VERSION` and `CHANGELOG.md` updated
-- [ ] New immutable Host Core Git tag selected
-- [ ] Helper scripts syntax-tested
-- [ ] Tracked native config/systemd files validated
-- [ ] Traefik version pinned and upstream checksum verified
-- [ ] SSHPiper exact tag pinned
-- [ ] Approved Go build toolchain recorded
-- [ ] SSHPiper binaries built on build
-- [ ] Promoted native binary artifacts checksummed
-- [ ] Host Core Git tag created and pushed
-- [ ] Exact Git tag checked out/tested on dev
-- [ ] Exact binary artifacts installed/tested on dev
-- [ ] Network allocation tested
-- [ ] Web routing tested
-- [ ] SSH routing tested
-- [ ] Dev reboot tested
-- [ ] Exact same Git tag promoted to prod
-- [ ] Exact same binary artifacts promoted to prod
-- [ ] Prior Git tag/artifacts retained
-- [ ] Prod ingress verified
-- [ ] Change record updated
+- [ ] Working tree understood/clean
+- [ ] Host Core version changed intentionally
+- [ ] `host/versions.env` pins reviewed
+- [ ] `ktx-validate-repo` passes
+- [ ] Shell/Python validation passes
+- [ ] Native version changes tested on build
+- [ ] SSH `ktx` route tested if SSH-related changes exist
+- [ ] Traefik route/ACME tested if web-ingress changes exist
+- [ ] Docker/network tests pass if affected
+- [ ] Reboot test performed when host-service ordering changed
+- [ ] Immutable Git tag created
+- [ ] Exact tag passes dev
+- [ ] Exact same tag deployed to prod
+- [ ] Only affected services restarted
+- [ ] External post-deploy verification complete

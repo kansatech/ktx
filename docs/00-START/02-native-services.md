@@ -1,24 +1,14 @@
-# Native Services
+# Native Host Services
 
-These services are installed directly on Ubuntu.
+These are part of Host Core rather than workload modules.
 
-| Service | systemd unit | Listener | Reason it is native |
+| Component | Native service | Listener | Role |
 |---|---|---|---|
-| OpenSSH | `ssh.service` | TCP 2222 | Host recovery/administration must not depend on Docker |
-| Traefik | `traefik.service` | TCP 80/443 | Public web ingress must survive workload recreation and needs no Docker socket |
-| SSHPiper | `sshpiper.service` | TCP 22 | Public SSH ingress is host plumbing, not a hosted app |
-| rsyslog | `rsyslog.service` | TCP 514 from KTX private pool | Host owns central low-overhead log collection |
-| Docker | `docker.service` | local socket | Workload runtime |
-| chrony/system time | Ubuntu service | N/A | Reliable time for TLS/logging |
-| UFW | native firewall | N/A | Host-native ingress policy |
+| OpenSSH | `ssh.service` | `127.0.0.1:2222` | Host shell for `ktx`; key-only; not public |
+| SSHPiper | `sshpiper.service` | `:22` | All public SSH routing, including host `ktx` |
+| Traefik | `traefik.service` | `:80`, `:443` | Public HTTP/HTTPS ingress and ACME |
+| Docker | `docker.service` | none public | Workload runtime |
+| rsyslog | `rsyslog.service` | `:514` from KTX Docker pool | Central low-overhead workload logging |
+| Chrony | `chrony.service` | normal NTP behavior | Host time |
 
-KTX helper tools under `/usr/local/sbin` are also host-native:
-
-```text
-ktx-net
-ktx-web-route
-ktx-ssh-route
-ktx-host-check
-```
-
-Future template packs consume those host contracts instead of editing KTX Core internals directly.
+Fresh installation/configuration is scripted by `bin/ktx-init`; these documents describe the operating model, not repeated APT steps.

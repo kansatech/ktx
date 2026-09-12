@@ -1,17 +1,15 @@
-# Environment Model
+# Build / Dev / Prod Model
 
-The three hosts have the same conceptual layout but different permissions and purposes.
+All three hosts use the same Host Core architecture and Git repository. Their server-local configuration differs.
 
-| Capability | build | dev | prod |
+| Concern | Build | Dev | Prod |
 |---|---|---|---|
-| Compile SSHPiper | Yes | No | No |
-| Download upstream release artifacts | Yes | Only to troubleshoot | No during normal deployment |
-| Test new Host Core release | First-pass | Full integration | No; consumes approved release |
-| Traefik | Installed | Installed | Installed |
-| SSHPiper | Installed/testable | Installed/testable | Installed/public if offered |
-| Real Let's Encrypt | Normally no | Only test domains if needed | Yes |
-| Host admin SSH | 2222 | 2222 | 2222, restricted |
-| Public workload data | No | Sanitized/test only | Yes |
-| Docker debug/private host port mappings | Allowed when documented | Allowed on trusted interfaces | Avoid/deny |
+| Host login | `ssh ktx@host` through SSHPiper | same | same |
+| Public host sshd | never | never | never |
+| Root SSH | disabled | disabled | disabled |
+| Traefik | available for platform testing | test/staging routes | public production routes |
+| Docker builds | primary purpose | occasional testing only | no normal image builds |
+| Workload data | synthetic | test/sanitized | live |
+| Secrets | build/test | dev | production |
 
-The environment-specific documents in `09-ENVIRONMENTS/` contain the exceptions. Core files do not hide environment behavior behind clever `IF ENV=...` shell branches.
+Host Core is promoted by Git tag through build -> dev -> prod. Workload modules have their own independent lifecycle.

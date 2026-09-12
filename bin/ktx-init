@@ -1,0 +1,251 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="${KTX_ROOT:-/srv/ktx}"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  sudo ./bin/ktx-init bootstrap --hostname HOST --env build|dev|prod
+  sudo ./bin/ktx-init secure-ssh
+  sudo ./bin/ktx-init finish --acme-email EMAIL
+  sudo ./bin/ktx-init status
+
+Run phases in that order on a fresh server.
+EOF
+}
+
+require_root() { [[ "$(id -u)" -eq 0 ]] || { echo "Run with sudo/root." >&2; exit 1; }; }
+conf_set() {
+  local key="$1" value="$2" file="${ROOT}/config/host.conf"
+  if grep -qE "^${key}=" "$file"; then sed -i "s#^${key}=.*#${key}=${value}#" "$file"; else printf '%s=%s\n' "$key" "$value" >> "$file"; fi
+}
+install_base_packages() {
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    curl gnupg jq rsync zstd unzip tar openssh-server chrony rsyslog logrotate ufw acl python3 sudo
+}
+create_ktx_user() {
+  if ! id ktx >/dev/null 2>&1; then
+    adduser --disabled-password --gecos "" ktx
+    usermod -aG sudo ktx
+  fi
+  install -d -o ktx -g ktx -m 0700 /home/ktx/.ssh
+  touch /home/ktx/.ssh/authorized_keys
+  chown ktx:ktx /home/ktx/.ssh/authorized_keys
+  chmod 0600 /home/ktx/.ssh/authorized_keys
+  # Let the human administrator manage the Git checkout and nested module repositories
+  # without making server-local secrets/data user-owned.
+  chown ktx:ktx "${ROOT}" "${ROOT}/images"
+  for tracked in .git docs bin host module-template; do
+    [[ -e "${ROOT}/${tracked}" ]] && chown -R ktx:ktx "${ROOT}/${tracked}"
+  done
+  find "${ROOT}" -maxdepth 1 -type f -exec chown ktx:ktx {} +
+
+  if passwd -S ktx | awk '{exit ($2=="P" ? 0 : 1)}'; then
+    echo "ktx already has a local password; leaving it unchanged."
+  else
+    echo
+    echo "Set the temporary SSH/sudo password for the ktx account."
+    passwd ktx
+  fi
+}
+write_bootstrap_sshd() {
+  cat >/etc/ssh/sshd_config.d/10-ktx.conf <<'EOF'
+Port 22
+PermitRootLogin no
+PubkeyAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+X11Forwarding no
+AllowUsers ktx
+
+Match User ktx
+    PasswordAuthentication yes
+Match all
+EOF
+  sshd -t
+  systemctl enable --now ssh
+  systemctl reload ssh
+}
+install_docker() {
+  apt-get remove -y docker.io docker-compose docker-compose-v2 docker-doc docker-buildx podman-docker containerd runc 2>/dev/null || true
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  chmod a+r /etc/apt/keyrings/docker.asc
+  cat >/etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  install -d -m 0755 /etc/docker
+  install -o root -g root -m 0644 "${ROOT}/host/docker/daemon.json" /etc/docker/daemon.json
+  dockerd --validate --config-file=/etc/docker/daemon.json
+  systemctl enable --now docker
+  systemctl restart docker
+}
+
+bootstrap() {
+  require_root
+  local hostname="" env=""
+  shift
+  while (($#)); do
+    case "$1" in
+      --hostname) hostname="$2"; shift 2;;
+      --env) env="$2"; shift 2;;
+      *) echo "Unknown option: $1" >&2; usage; exit 2;;
+    esac
+  done
+  [[ -n "$hostname" ]] || { echo "--hostname is required" >&2; exit 2; }
+  [[ "$env" =~ ^(build|dev|prod)$ ]] || { echo "--env must be build, dev, or prod" >&2; exit 2; }
+  . /etc/os-release
+  [[ "${ID:-}" == ubuntu && "${VERSION_ID:-}" == 24.04 ]] || { echo "KTX Host Core currently targets Ubuntu 24.04 LTS." >&2; exit 1; }
+
+  "${ROOT}/bin/ktx-init-layout"
+  install_base_packages
+  hostnamectl set-hostname "$hostname"
+  timedatectl set-timezone UTC
+  conf_set KTX_ENV "$env"
+  conf_set KTX_HOST "$hostname"
+  create_ktx_user
+  write_bootstrap_sshd
+  systemctl enable --now chrony rsyslog
+
+  echo
+  echo "BOOTSTRAP COMPLETE"
+  echo "Public SSH :22 currently goes directly to OpenSSH."
+  echo "Password login is temporarily allowed ONLY for user ktx. Root SSH is disabled."
+  echo
+  echo "Next, from your workstation:"
+  echo "  ssh ktx@${hostname}"
+  echo "  # then install/verify your public key as shown in INSTALL.md"
+  echo
+  echo "Do NOT run secure-ssh until key login works."
+}
+
+secure_ssh() {
+  require_root
+  local auth=/home/ktx/.ssh/authorized_keys route="${ROOT}/config/sshpiper/routes/ktx"
+  [[ -s "$auth" ]] || { echo "${auth} is empty. Install your public key first." >&2; exit 1; }
+
+  "${ROOT}/bin/ktx-install-native" sshpiper
+  if ! id sshpiper >/dev/null 2>&1; then useradd --system --home /nonexistent --shell /usr/sbin/nologin sshpiper; fi
+  install -d -o sshpiper -g sshpiper -m 0700 "${ROOT}/config/sshpiper/routes" "${ROOT}/secrets/sshpiper"
+
+  if [[ ! -d "$route" ]]; then
+    "${ROOT}/bin/ktx-ssh-route" init ktx ktx 127.0.0.1 2222 >/tmp/ktx-ssh-route-init.out
+    # The downstream keys are exactly the keys that worked during bootstrap.
+    install -o sshpiper -g sshpiper -m 0600 "$auth" "$route/authorized_keys"
+    # The generated mapping key is what SSHPiper uses to log in to localhost sshd.
+    cat "$route/id_rsa.pub" >> "$auth"
+    sort -u "$auth" -o "$auth"
+    chown ktx:ktx "$auth"; chmod 0600 "$auth"
+  fi
+
+  # Preserve the public SSH host identity when SSHPiper replaces sshd on :22.
+  install -o sshpiper -g sshpiper -m 0600 /etc/ssh/ssh_host_ed25519_key "${ROOT}/secrets/sshpiper/server_key"
+
+  cat >/etc/ssh/sshd_config.d/10-ktx.conf <<'EOF'
+Port 2222
+ListenAddress 127.0.0.1
+PermitRootLogin no
+PubkeyAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+X11Forwarding no
+AllowAgentForwarding no
+AllowUsers ktx
+EOF
+  sshd -t
+  systemctl reload ssh
+  sleep 1
+  ss -lntH | awk '{print $4}' | grep -qx '127.0.0.1:2222' || { echo "Host sshd did not move to 127.0.0.1:2222" >&2; exit 1; }
+
+  ssh-keyscan -p 2222 127.0.0.1 2>/dev/null > "$route/known_hosts"
+  chown sshpiper:sshpiper "$route/known_hosts"
+  chmod 0600 "$route/known_hosts"
+
+  ln -sfn "${ROOT}/host/systemd/sshpiper.service" /etc/systemd/system/sshpiper.service
+  systemctl daemon-reload
+  systemctl enable --now sshpiper
+  sleep 1
+  systemctl is-active --quiet sshpiper || { journalctl -u sshpiper -n 100 --no-pager; exit 1; }
+
+  echo
+  echo "SSH CUTOVER COMPLETE"
+  echo "Public :22 is now SSHPiper. Login 'ktx' routes to host OpenSSH on 127.0.0.1:2222."
+  echo "Host OpenSSH is public-key only and is not directly exposed."
+  echo
+  echo "KEEP THIS SESSION OPEN. Open a second terminal and verify:"
+  echo "  ssh ktx@$(hostname -f 2>/dev/null || hostname)"
+  echo "Only continue to 'finish' after that works."
+}
+
+finish() {
+  require_root
+  local email=""
+  shift
+  while (($#)); do
+    case "$1" in
+      --acme-email) email="$2"; shift 2;;
+      *) echo "Unknown option: $1" >&2; usage; exit 2;;
+    esac
+  done
+  [[ -n "$email" && "$email" == *@* ]] || { echo "--acme-email is required" >&2; exit 2; }
+  systemctl is-active --quiet sshpiper || { echo "SSHPiper is not active. Run secure-ssh first." >&2; exit 1; }
+
+  install_docker
+  "${ROOT}/bin/ktx-install-native" traefik
+  "${ROOT}/bin/ktx-init-layout"
+  conf_set KTX_ACME_EMAIL "$email"
+
+  if ! id traefik >/dev/null 2>&1; then useradd --system --home /nonexistent --shell /usr/sbin/nologin traefik; fi
+  install -d -o root -g traefik -m 0750 "${ROOT}/config/traefik" "${ROOT}/config/traefik/dynamic"
+  install -d -o traefik -g traefik -m 0750 "${ROOT}/data/traefik" "${ROOT}/logs/traefik"
+  sed "s/__KTX_ACME_EMAIL__/${email//\//\\/}/g" "${ROOT}/host/defaults/traefik.yml.example" > "${ROOT}/config/traefik/traefik.yml"
+  chown root:traefik "${ROOT}/config/traefik/traefik.yml"
+  chmod 0640 "${ROOT}/config/traefik/traefik.yml"
+  touch "${ROOT}/data/traefik/acme.json"
+  chown traefik:traefik "${ROOT}/data/traefik/acme.json"
+  chmod 0600 "${ROOT}/data/traefik/acme.json"
+
+  install -d -o syslog -g adm -m 0750 "${ROOT}/logs/remote"
+  "${ROOT}/bin/ktx-apply-host"
+  rsyslogd -N1
+  systemctl restart rsyslog
+  systemctl enable --now traefik
+
+  # Host firewall: all SSH is through SSHPiper :22; host sshd :2222 is loopback only.
+  local pool
+  pool="$(awk -F= '$1=="KTX_DOCKER_POOL"{print $2}' "${ROOT}/config/host.conf")"
+  ufw default deny incoming
+  ufw default allow outgoing
+  ufw allow 22/tcp
+  ufw allow 80/tcp
+  ufw allow 443/tcp
+  ufw allow from "$pool" to any port 514 proto tcp
+  ufw --force enable
+
+  echo
+  echo "KTX HOST CORE COMPLETE"
+  "${ROOT}/bin/ktx-host-check" || true
+  echo
+  echo "Review INSTALL.md acceptance checks, then commit/tag Host Core changes from build as normal."
+}
+
+status() {
+  require_root
+  "${ROOT}/bin/ktx-host-check"
+}
+
+case "${1:-}" in
+  bootstrap) bootstrap "$@" ;;
+  secure-ssh) secure_ssh ;;
+  finish) finish "$@" ;;
+  status) status ;;
+  *) usage; exit 2 ;;
+esac

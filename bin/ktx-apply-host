@@ -1,29 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 ROOT="${KTX_ROOT:-/srv/ktx}"
-
-if [[ "$(id -u)" -ne 0 ]]; then
-  echo "ktx-apply-host must run as root" >&2
-  exit 1
-fi
+[[ "$(id -u)" -eq 0 ]] || { echo "ktx-apply-host must run as root" >&2; exit 1; }
 
 "${ROOT}/bin/ktx-init-layout"
-
-# KTX helper commands remain sourced from the checked-out repository.
 for source in "${ROOT}"/bin/ktx-*; do
-  [[ -f "${source}" && -x "${source}" ]] || continue
-  tool="$(basename "${source}")"
-  ln -sfn "${source}" "/usr/local/sbin/${tool}"
+  [[ -f "$source" && -x "$source" ]] || continue
+  ln -sfn "$source" "/usr/local/sbin/$(basename "$source")"
 done
-
-# Host-native tracked configuration.
 ln -sfn "${ROOT}/host/systemd/traefik.service" /etc/systemd/system/traefik.service
 ln -sfn "${ROOT}/host/systemd/sshpiper.service" /etc/systemd/system/sshpiper.service
 ln -sfn "${ROOT}/host/rsyslog/30-ktx-remote.conf" /etc/rsyslog.d/30-ktx-remote.conf
 ln -sfn "${ROOT}/host/logrotate/ktx-remote" /etc/logrotate.d/ktx-remote
-
 systemctl daemon-reload
-
-echo "KTX tracked host files linked. Services were NOT restarted."
-echo "Validate configuration, then restart/reload only the affected services."
+echo "KTX tracked host files applied. Existing services were not bounced."

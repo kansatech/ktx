@@ -1,12 +1,12 @@
-# Operating Principles
+# Host Core Principles
 
-1. **Host administration never depends on Docker.** OpenSSH remains native and independently reachable.
-2. **Public ingress never gets the Docker socket.** Traefik uses the file provider; SSHPiper uses explicit working-directory routes.
-3. **Workload IPs are deliberate.** KTX allocates a deterministic `/28` per workload instance and reserves `.2` for its primary service.
-4. **Docker names are not an ingress contract.** Native services route by static private IP because the host does not use Docker's embedded DNS.
-5. **Every public route is explicit.** A workload is invisible from the internet until a template pack creates a Traefik and/or SSHPiper route.
-6. **No `latest`.** Native third-party binaries are pinned in a Host Core release.
-7. **Build once, promote exact bytes.** SSHPiper is compiled on build, tested on dev, then the same binary goes to prod. Traefik follows the same artifact promotion model.
-8. **Prod is not a compiler.** Go/build toolchains stay on build.
-9. **Templates may add workloads; templates may not silently mutate KTX Core policy.** Host changes are a Host Core release.
-10. **A fresh-host rebuild must be possible from docs + core release + backed-up host state.**
+1. **One authoritative install path.** Fresh-server setup is `INSTALL.md` plus the phased `ktx-init` command; architecture documents do not duplicate package-install recipes.
+2. **SSH first.** Establish the `ktx` administrator, prove the key, then put SSHPiper in front before spending time on Docker or web ingress.
+3. **No root SSH.** Humans log in as `ktx` and elevate with sudo.
+4. **One public SSH port.** SSHPiper owns TCP 22 and routes by username, including the reserved `ktx` route back to loopback OpenSSH.
+5. **Native host plumbing, containerized workloads.** Host Core operates the machine; KTX modules are things the machine hosts.
+6. **No Docker socket ingress discovery.** Routes are explicit files/private addresses.
+7. **Pin versions in Git.** Native Traefik and SSHPiper versions live in tracked `host/versions.env`; install tooling downloads those exact releases and verifies upstream checksums.
+8. **Build -> dev -> prod still matters.** A version/config change is proven on build and dev before the same Host Core Git tag is used on prod.
+9. **Server-local state stays local.** `config/`, `secrets/`, `containers/`, `data/`, and module checkouts are ignored by Host Core Git and backed up separately.
+10. **Prefer boring recovery.** Provider console access remains the break-glass path if SSHPiper or networking is broken.

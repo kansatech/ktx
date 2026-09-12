@@ -1,29 +1,53 @@
-# Administrator SSH vs Workload SSH
+# Host and Workload SSH Through One SSHPiper
 
-There are deliberately two different SSH entry paths.
-
-## Administrator
+KTX deliberately uses one public SSH listener:
 
 ```text
-ssh -p 2222 admin@host
+public :22 -> SSHPiper
 ```
 
-- Ubuntu OpenSSH
-- host account
-- sudo according to host policy
-- restricted firewall source
-- independent of Docker/SSHPiper
+Routing is by username.
 
-## Workload/customer
+## Host administrator
+
+```bash
+ssh ktx@host
+```
+
+Route:
 
 ```text
-ssh customer-login@host
+ktx -> ktx@127.0.0.1:2222
 ```
 
-- TCP 22
-- native SSHPiper
-- route selected by external username
-- upstream target is a private Docker IP
-- no host shell
+The host's native OpenSSH is key-only and bound to loopback. It is not reachable directly from the network.
 
-Do not create a special SSHPiper route that points your normal administrator username back to host sshd. It saves one port number while making recovery depend on the very proxy you may need to repair.
+## Workload customer
+
+```bash
+ssh clienta@host
+```
+
+Example route:
+
+```text
+clienta -> site@172.28.4.2:2222
+```
+
+## Why the `ktx` name matters
+
+It is intentionally uncommon and reserved for Host Core administration. A module must never register a workload SSHPiper route named `ktx`.
+
+## Recovery implication
+
+Because SSHPiper sits in front of host SSH, an SSHPiper failure can block normal network administration. Keep VPS/provider console/recovery access working. Troubleshooting instructions are in `docs/08-TROUBLESHOOTING/01-host-admin-ssh.md`.
+
+## Add another administrator key
+
+After the SSHPiper cutover, public clients authenticate to the `ktx` **SSHPiper route**, not directly to OpenSSH. Put a new public key in a temporary file on the server and authorize it with:
+
+```bash
+sudo ktx-ssh-route authorize ktx /path/to/new-key.pub
+```
+
+Do not replace the route's `id_rsa`; that is SSHPiper's upstream mapping key, not your workstation key.

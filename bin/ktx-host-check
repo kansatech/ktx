@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
 set -u
 fail=0
+ok(){ printf 'OK   %s\n' "$*"; }
+warn(){ printf 'WARN %s\n' "$*"; }
+bad(){ printf 'FAIL %s\n' "$*"; fail=1; }
 
-check_service() {
-  local s="$1"
-  if systemctl is-active --quiet "$s"; then printf 'OK   service %-12s active\n' "$s"; else printf 'FAIL service %-12s not active\n' "$s"; fail=1; fi
-}
-
-for s in ssh docker traefik sshpiper rsyslog; do check_service "$s"; done
-
-for p in 22 80 443 514 2222; do
-  if ss -lntH | awk '{print $4}' | grep -Eq "[:.]${p}$"; then printf 'OK   tcp %-4s listening\n' "$p"; else printf 'WARN tcp %-4s not listening\n' "$p"; fi
+for s in ssh sshpiper docker traefik rsyslog; do
+  systemctl is-active --quiet "$s" && ok "service $s active" || bad "service $s not active"
 done
 
-if docker info >/dev/null 2>&1; then echo 'OK   docker daemon responsive'; else echo 'FAIL docker daemon unavailable'; fail=1; fi
+ss -lntH | awk '{print $4}' | grep -Eq '(^|:)22$' && ok 'public SSH :22 listening' || bad 'public SSH :22 not listening'
+ss -lntH | awk '{print $4}' | grep -qx '127.0.0.1:2222' && ok 'host OpenSSH loopback 127.0.0.1:2222' || bad 'host OpenSSH not loopback-only on 2222'
+if ss -lntH | awk '{print $4}' | grep -Eq '^(0\.0\.0\.0|\[::\]|\*):2222$'; then bad 'host OpenSSH :2222 is publicly bound'; else ok 'host OpenSSH :2222 not publicly bound'; fi
+for p in 80 443 514; do ss -lntH | awk '{print $4}' | grep -Eq "[:.]${p}$" && ok "tcp $p listening" || warn "tcp $p not listening"; done
 
-if [ -r /srv/ktx/config/host.conf ]; then echo 'OK   /srv/ktx/config/host.conf readable'; else echo 'FAIL /srv/ktx/config/host.conf missing'; fail=1; fi
-if [ -f /srv/ktx/config/networks.tsv ]; then echo 'OK   network registry present'; else echo 'FAIL network registry missing'; fail=1; fi
+docker info >/dev/null 2>&1 && ok 'Docker daemon responsive' || bad 'Docker daemon unavailable'
+[[ -r /srv/ktx/config/host.conf ]] && ok 'host.conf readable' || bad 'host.conf missing'
+[[ -f /srv/ktx/config/sshpiper/routes/ktx/sshpiper_upstream ]] && ok 'SSHPiper ktx host route present' || bad 'SSHPiper ktx host route missing'
+[[ -s /home/ktx/.ssh/authorized_keys ]] && ok 'ktx authorized_keys present' || bad 'ktx authorized_keys empty/missing'
 
 exit "$fail"

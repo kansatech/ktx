@@ -1,44 +1,27 @@
 # Roll Back Host Core
 
-## Source/config-template regression
+## Git/config rollback
 
-Identify the previous known-good tag:
-
-```bash
-git -C /srv/ktx tag --sort=-creatordate
-```
-
-Checkout:
+Checkout the previous known-good Host Core tag:
 
 ```bash
-sudo git -C /srv/ktx checkout --detach vPREVIOUS
+git -C /srv/ktx fetch --tags
+git -C /srv/ktx checkout --detach PREVIOUS_TAG
 sudo /srv/ktx/bin/ktx-apply-host
 ```
 
-Then validate and restart only the affected service(s).
+## Native component rollback
 
-Because `config/` is ignored, checking out an older tag does not automatically overwrite server-specific configuration. If the failed release required a config-format change, restore the compatible configuration backup explicitly.
+The previous tag also contains the previous pinned Traefik/SSHPiper version. Reinstall only the component being rolled back:
 
-## Binary regression
-
-Restore the exact previous binary artifact from:
-
-```text
-/srv/ktx/releases/<previous-release>/
+```bash
+sudo /srv/ktx/bin/ktx-install-native traefik
+# or
+sudo /srv/ktx/bin/ktx-install-native sshpiper
 ```
 
-then restart only that service.
+Then restart only that service.
 
-## Server-local state to protect before core changes
+For SSHPiper, use provider console/recovery access during rollback and prove `ssh ktx@host` externally before declaring recovery complete.
 
-```text
-/srv/ktx/config/
-/srv/ktx/secrets/
-/srv/ktx/data/traefik/
-/srv/ktx/containers/
-/etc/ssh/sshd_config.d/10-ktx-admin.conf
-```
-
-## Host package regression
-
-Ubuntu/Docker/kernel rollback is a different class of change. Use provider snapshots/package recovery appropriate to the failure; Git checkout does not reverse a kernel upgrade.
+Server-local `config/` and `secrets/` are not rolled back automatically by Git. If the bad release changed their format, follow that release's migration/rollback notes.

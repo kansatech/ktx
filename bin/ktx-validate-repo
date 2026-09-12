@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="${KTX_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+required=(README.md INSTALL.md VERSION host/versions.env bin/ktx-init bin/ktx-init-layout bin/ktx-install-native bin/ktx-apply-host bin/ktx-host-check bin/ktx-net bin/ktx-repo-status bin/ktx-ssh-route bin/ktx-web-route host/defaults/host.conf.example host/defaults/traefik.yml.example)
+failed=0
+for rel in "${required[@]}"; do [[ -e "$ROOT/$rel" ]] || { echo "MISSING: $rel" >&2; failed=1; }; done
+for path in "$ROOT"/bin/ktx-*; do [[ -x "$path" ]] || { echo "NOT EXECUTABLE: ${path#$ROOT/}" >&2; failed=1; }; done
+((failed==0)) || { echo 'KTX repository validation FAILED.' >&2; exit 1; }
+echo 'KTX repository validation OK.'

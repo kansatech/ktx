@@ -1,80 +1,76 @@
 # Host Core Git Release Lifecycle
 
-`Kansatech/ktx` is deployed by immutable Git tag.
-
-Server-specific `config/`, `secrets/`, `containers/`, and runtime state are **not** part of the tag.
-
-## Flow
+`Kansatech/ktx` is promoted by immutable Git tag. The tag pins native dependency versions in `host/versions.env`.
 
 ```text
-ktx-build-26
-  work/test on branch/main
-  validate Host Core
-  create immutable Git tag
-  build/verify native binary artifacts
+build
+  change/test Host Core
+  bump pinned Traefik/SSHPiper versions if needed
+  ktx-install-native ...
+  integration test
+  create immutable tag
         |
         v
-ktx-dev-26
-  fetch exact tag
-  checkout detached tag
-  import exact binary artifacts
-  ktx-apply-host
-  test/reboot/integration
+dev
+  checkout exact tag
+  install the pinned native releases
+  test SSH/web/network/reboot behavior
         |
         v
-ktx-prod-26
-  fetch exact same tag
-  checkout detached tag
-  import exact same binary artifacts
-  ktx-apply-host
+prod
+  checkout exact same tag
+  install only the native component(s) changed
+  apply tracked files
   restart only affected services
   verify
 ```
 
 ## Tagging
 
-Example:
-
 ```bash
 git -C /srv/ktx status
-git -C /srv/ktx tag -a v2026.09.11-r2 -m "KTX Host Core 2026.09.11-r2"
-git -C /srv/ktx push origin v2026.09.11-r2
+git -C /srv/ktx tag -a v2026.09.11-r3 -m "KTX Host Core 2026.09.11-r3"
+git -C /srv/ktx push origin v2026.09.11-r3
 ```
 
-Once promoted, do not move or replace a release tag.
+Do not move an already promoted tag.
 
-## Dev deployment
+## Dev/prod checkout
 
 ```bash
 git -C /srv/ktx fetch --tags
-git -C /srv/ktx checkout --detach v2026.09.11-r2
+git -C /srv/ktx checkout --detach v2026.09.11-r3
+sudo /srv/ktx/bin/ktx-validate-repo
+```
+
+If the release changes a pinned native component, install that exact pinned release:
+
+```bash
+sudo /srv/ktx/bin/ktx-install-native sshpiper
+sudo /srv/ktx/bin/ktx-install-native traefik
+```
+
+`ktx-install-native` downloads the version named by the checked-out tag and verifies the upstream release checksum before installation.
+
+Then:
+
+```bash
 sudo /srv/ktx/bin/ktx-apply-host
 ```
 
-Validate changes before restarting the affected native service.
+and restart only the service the release actually changed.
 
-## Prod deployment
+## Server-local state
 
-Use the exact tag that passed dev.
-
-Never:
-
-```bash
-git pull
-```
-
-blindly on production `main`.
-
-## Native binary artifacts
-
-Traefik/SSHPiper binaries are not committed merely to make Git large. Build/verify them on build and store the approved binaries/checksums under ignored:
+The Git tag does not own:
 
 ```text
-/srv/ktx/releases/<core-release>/
+config/
+secrets/
+images/
+containers/
+data/
+logs/
 ```
 
-Promote those exact bytes to dev and prod, or attach them to the corresponding controlled GitHub Release if you later standardize that workflow.
-
-## Rule
-
-Git version-controls the Host Core source/configuration defaults. Runtime state and secrets stay local. Binary promotion still follows build -> dev -> prod.
+Those remain server-specific and require their own backup/recovery plan.
