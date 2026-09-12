@@ -1,0 +1,23 @@
+[Unit]
+Description=KTX Traefik ingress
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=traefik
+Group=traefik
+ExecStart=/usr/local/sbin/traefik --configFile=/srv/ktx/config/traefik/traefik.yml
+Restart=on-failure
+RestartSec=2s
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/ktx/data/traefik /srv/ktx/logs/traefik
+ReadOnlyPaths=/srv/ktx/config/traefik
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+# Local module build/runtime output
+/build/
+/dist/
+/artifacts/
+/tmp/
+.env
+.env.*
+!.env.example
+*.secret
+*.key
+*.pem

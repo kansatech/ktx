@@ -1,0 +1,24 @@
+# Host Core Release Checklist
+
+- [ ] Working tree clean
+- [ ] `VERSION` and `CHANGELOG.md` updated
+- [ ] New immutable Host Core Git tag selected
+- [ ] Helper scripts syntax-tested
+- [ ] Tracked native config/systemd files validated
+- [ ] Traefik version pinned and upstream checksum verified
+- [ ] SSHPiper exact tag pinned
+- [ ] Approved Go build toolchain recorded
+- [ ] SSHPiper binaries built on build
+- [ ] Promoted native binary artifacts checksummed
+- [ ] Host Core Git tag created and pushed
+- [ ] Exact Git tag checked out/tested on dev
+- [ ] Exact binary artifacts installed/tested on dev
+- [ ] Network allocation tested
+- [ ] Web routing tested
+- [ ] SSH routing tested
+- [ ] Dev reboot tested
+- [ ] Exact same Git tag promoted to prod
+- [ ] Exact same binary artifacts promoted to prod
+- [ ] Prior Git tag/artifacts retained
+- [ ] Prod ingress verified
+- [ ] Change record updated

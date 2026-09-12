@@ -1,0 +1,29 @@
+[Unit]
+Description=KTX SSHPiper SSH ingress
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sshpiper
+Group=sshpiper
+ExecStart=/usr/local/libexec/sshpiper/sshpiperd \
+  -port 22 \
+  -i /srv/ktx/secrets/sshpiper/server_key \
+  --server-key-generate-mode notexist \
+  /usr/local/libexec/sshpiper/workingdir \
+  --root /srv/ktx/config/sshpiper/routes \
+  --no-password-auth \
+  --strict-hostkey
+Restart=on-failure
+RestartSec=2s
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/ktx/secrets/sshpiper /srv/ktx/config/sshpiper
+
+[Install]
+WantedBy=multi-user.target

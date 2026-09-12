@@ -1,0 +1,36 @@
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+
+providers:
+  file:
+    directory: /srv/ktx/config/traefik/dynamic
+    watch: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@example.com
+      storage: /srv/ktx/data/traefik/acme.json
+      httpChallenge:
+        entryPoint: web
+
+api:
+  dashboard: false
+  insecure: false
+
+log:
+  level: INFO
+  filePath: /srv/ktx/logs/traefik/traefik.log
+
+accessLog:
+  filePath: /srv/ktx/logs/traefik/access.log

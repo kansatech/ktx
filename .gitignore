@@ -1,0 +1,34 @@
+# KTX server-local/runtime state.
+# These paths exist under /srv/ktx but are deliberately not owned by Kansatech/ktx.
+
+/config/
+/secrets/
+/images/
+/containers/
+/data/
+/logs/
+/releases/
+/recovery/
+/tmp/
+/cache/
+
+# Local overrides / credentials
+.env
+.env.*
+!.env.example
+*.local
+*.secret
+*.secrets
+*.key
+*.pem
+
+# Build/editor/platform noise
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

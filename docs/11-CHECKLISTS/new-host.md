@@ -1,0 +1,23 @@
+# New Host Checklist
+
+- [ ] Ubuntu 24.04 installed/patched
+- [ ] Correct `ktx-*-26` hostname
+- [ ] Provider console/recovery confirmed
+- [ ] UTC + Chrony healthy
+- [ ] `/srv/ktx` host layout created
+- [ ] `Kansatech/ktx` cloned to `/srv/ktx`
+- [ ] `bin/ktx-init-layout` run
+- [ ] `/srv/ktx/config/host.conf` created
+- [ ] Docker private pool checked for route conflicts
+- [ ] Host OpenSSH moved to 2222 and key login tested in second session
+- [ ] Docker official packages installed
+- [ ] Docker daemon config validated
+- [ ] KTX helper tools installed
+- [ ] Traefik installed from approved release
+- [ ] SSHPiper installed from approved release
+- [ ] rsyslog KTX receiver configured
+- [ ] UFW/provider firewall configured
+- [ ] Only expected public listeners present
+- [ ] `ktx-host-check` passes
+- [ ] Reboot test passes
+- [ ] Environment-specific document completed

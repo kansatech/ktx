@@ -1,0 +1,18 @@
+schema: 1
+name: REPLACE_MODULE
+repository: Kansatech/ktx-REPLACE_MODULE
+image: ktx/REPLACE_MODULE
+version: 0.1.0
+
+network:
+  primary_ip: ".2"
+
+ports: []
+
+ingress:
+  web: false
+  ssh: false
+
+persistent_state: []
+
+notes: []

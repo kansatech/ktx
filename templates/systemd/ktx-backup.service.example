@@ -1,8 +1,0 @@
-[Unit]
-Description=KTX platform backup
-After=docker.service
-Requires=docker.service
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/docker exec ktx-backup-01 /usr/local/sbin/ktx-backup

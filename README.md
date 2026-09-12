@@ -1,80 +1,107 @@
-# KTX Container Platform Playbook
+# KTX Host Core
 
-> **Purpose:** Index for building, operating, patching, restoring, and eventually remembering the KTX hosting platform.
-
-This playbook describes **Ubuntu 24.04 LTS + Docker Engine** hosts named `ktx-build-26`, `ktx-dev-26`, and `ktx-prod-26`. The design uses **one isolated web container per site/customer**, plus a small group of shared infrastructure services.
-
-Do not read this front-to-back unless insomnia has become a project requirement. Each file is deliberately a small island.
-
-## Architecture in one screen
+`Kansatech/ktx` is both the Host Core source repository **and** the directory installed at:
 
 ```text
-                               INTERNET
-                                  |
-                    +-------------+-------------+
-                    |                           |
-                  80/443                       22
-                    |                           |
-              ktx-proxy-01                ktx-ssh-01
-                Traefik                    SSHPiper
-                    |                           |
-          +---------+---------+                 |
-          |                   |                 |
- ktx-web-sitea-01      ktx-web-siteb-01 <-------+
-          |                   |
-          +---------+---------+
-                    |
-       Percona / mail relay / central logging
-       joined only to the site networks that need them
+/srv/ktx
 ```
 
-Each site web container contains Apache, PHP-FPM, Composer, cron, SSH, and log forwarding. It serves plain HTTP internally. Traefik owns public TLS and certificates.
+A new KTX server begins by cloning this repository into `/srv/ktx`. Tracked files define the host platform; ignored directories hold that particular server's configuration, secrets, module checkouts, container instances, and runtime data.
 
-## Find what you need
+> **Scope:** KTX Host Core only. PHP, Percona, Vaultwarden, Uptime Kuma, Restic workloads, and other hosted services belong in separate `Kansatech/ktx-*` module repositories.
 
-| I need to... | Read |
+## Fresh server: first commands
+
+After a clean Ubuntu 24.04 LTS install:
+
+```bash
+sudo apt update
+sudo apt install -y git ca-certificates
+
+sudo mkdir -p /srv
+sudo git clone https://github.com/Kansatech/ktx.git /srv/ktx
+cd /srv/ktx
+
+sudo ./bin/ktx-init-layout
+```
+
+If the repository is private or you prefer GitHub SSH authentication, clone with the SSH URL instead.
+
+Then continue with:
+
+[`docs/01-BOOTSTRAP/01-fresh-ubuntu.md`](docs/01-BOOTSTRAP/01-fresh-ubuntu.md)
+
+## Repository / installed layout
+
+```text
+/srv/ktx/
+├── .git/                    Kansatech/ktx history
+├── .gitignore
+├── README.md
+├── VERSION
+├── CHANGELOG.md
+├── docs/                    Host Core documentation
+├── bin/                     tracked KTX host commands
+├── host/                    tracked native-service files/defaults
+├── module-template/         skeleton/contract for new ktx-* module repos
+│
+├── config/                  ignored: this server's non-secret config
+├── secrets/                 ignored: this server's secrets/private keys
+├── images/                  ignored by Core; contains separate module Git repos
+├── containers/              ignored: instantiated server-specific container configs
+├── data/                    ignored: persistent runtime data
+├── logs/                    ignored: runtime logs
+├── releases/                ignored: built/promoted artifacts
+├── recovery/                ignored: restore workspace
+└── tmp/                     ignored: scratch
+```
+
+`/srv/ktx/images/ktx-webphp85`, for example, can itself be a clone of `Kansatech/ktx-webphp85`. The parent KTX repository ignores that path, so the two histories do not collide.
+
+## Start here
+
+| Task | Document |
 |---|---|
-| Build a server from fresh Ubuntu | `01-HOST/01-fresh-install.md` |
-| Understand build/dev/prod differences | `00-START/03-environments.md` |
-| Understand Docker networking | `02-ARCHITECTURE/02-networking.md` |
-| Build/deploy an individual container | `14-BUILD-DEPLOY/README.md` |
-| Add a site after forgetting everything | `05-SITES/01-new-site.md` |
-| Update PHP | `06-LIFECYCLE/04-update-php.md` |
-| Promote build -> dev -> prod | `06-LIFECYCLE/01-build-dev-prod.md` |
-| Roll back | `06-LIFECYCLE/08-rollback.md` |
-| Restore one site | `08-BACKUP/05-restore-one-site.md` |
-| Rebuild after total loss | `08-BACKUP/07-disaster-recovery.md` |
-| Troubleshoot a dead site | `10-TROUBLESHOOTING/01-site-down.md` |
-| Harden prod | `09-SECURITY/02-production-hardening.md` |
-| Remember ports/paths/names | `12-REFERENCE/README.md` |
+| Understand KTX Core | [System at a glance](docs/00-START/01-system-at-a-glance.md) |
+| Understand Git/repository deployment | [Repository model](docs/00-START/06-repository-model.md) |
+| Build a new host | [Fresh Ubuntu bootstrap](docs/01-BOOTSTRAP/01-fresh-ubuntu.md) |
+| Understand `/srv/ktx` | [Filesystem layout](docs/01-BOOTSTRAP/02-filesystem.md) |
+| Configure administrator SSH | [Admin SSH](docs/01-BOOTSTRAP/05-admin-ssh.md) |
+| Install native Traefik | [Traefik](docs/01-BOOTSTRAP/06-traefik.md) |
+| Install native SSHPiper | [SSHPiper](docs/01-BOOTSTRAP/07-sshpiper.md) |
+| Understand workload networking | [Network model](docs/02-NETWORKING/01-network-model.md) |
+| Promote Host Core build -> dev -> prod | [Core release lifecycle](docs/04-LIFECYCLE/01-core-release-lifecycle.md) |
+| Create a new KTX module repository | [Module authoring](docs/12-MODULES/README.md) |
+| Rebuild a dead host | [Full host rebuild](docs/07-RECOVERY/03-full-host-rebuild.md) |
+| Find something quickly | [QUICK-LOOKUP.md](QUICK-LOOKUP.md) |
 
-## Non-negotiable rules
 
-1. **Build once; promote the exact artifact.** Prod never rebuilds an image that was tested elsewhere.
-2. **Containers are disposable; data is not.** Persistent state lives under `/srv/ktx`.
-3. **One site = one web container, one database, one DB user, one private site network.**
-4. **No site container gets privileged mode, the Docker socket, another customer's files, or host root.**
-5. **Only intended edge services publish production ports.**
-6. **Restart is not upgrade.** A new image requires container recreation.
-7. **Traefik owns certificates.** Site containers do not run Certbot.
-8. **Backups are not trusted until a restore has succeeded.**
-9. **Use immutable release tags; never `latest` on prod.**
-10. **Keep the system boring enough to understand ten years later.**
+## Critical Git safety rule
 
-## Current baseline (September 2026)
+Because `/srv/ktx` intentionally contains ignored runtime state, **never run this in the Host Core checkout**:
 
-- Ubuntu 24.04 LTS
-- Docker Engine from Docker's official APT repository
-- Traefik 3.7 series (currently active + security supported)
-- Percona Server for MySQL 8.4 LTS
-- PHP 8.5 normal web runtime
-- Apache event MPM + PHP-FPM `ondemand`
-- SSHPiper working-directory routing
-- Postfix internal relay
-- rsyslog central collection
-- restic encrypted backups
-- Uptime Kuma monitoring
-- Vaultwarden application service
-- RustDesk Server OSS remote-support infrastructure
+```bash
+git clean -fdx
+```
 
-See `12-REFERENCE/upstream-sources.md` before any major platform upgrade.
+or its more aggressive variants.
+
+`-x` tells Git to delete ignored files too. In KTX, ignored files include `config/`, `secrets/`, `images/`, `containers/`, and `data/`.
+
+Normal release deployment uses `git fetch`, `git checkout`/`git switch --detach`, and `ktx-apply-host`—not destructive cleaning of the checkout.
+
+## Core rule
+
+**If it operates the KTX host, it belongs in `Kansatech/ktx`. If KTX merely hosts it, it belongs in a separate `Kansatech/ktx-*` repository.**
+
+Examples:
+
+```text
+Kansatech/ktx
+Kansatech/ktx-webphp85
+Kansatech/ktx-percona84
+Kansatech/ktx-vaultwarden
+...
+```
+
+The Host Core defines the contract. Modules implement workloads against that contract.
