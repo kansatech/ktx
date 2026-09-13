@@ -23,6 +23,6 @@ On a build host, clone the module repository under:
 
 The parent `Kansatech/ktx` repository deliberately ignores `/srv/ktx/images`; each child directory is its own Git repository.
 
-See `/srv/ktx/docs/11-MODULES/` for the full contract.
+See `/srv/ktx/docs/12-MODULES/` for the full contract.
 
 A module repository owns both its Docker image build context (`image/`) and reusable container-instance templates (`container/`). Generated instances live under `/srv/ktx/containers` and are server-local.

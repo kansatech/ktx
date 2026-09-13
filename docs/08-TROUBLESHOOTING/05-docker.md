@@ -2,10 +2,10 @@
 
 ```bash
 systemctl status docker --no-pager
-journalctl -u docker -n 200 --no-pager
-docker info
-docker ps -a
-docker network ls
+sudo journalctl -u docker -n 200 --no-pager
+sudo docker info
+sudo docker ps -a
+sudo docker network ls
 ```
 
 Validate daemon config:

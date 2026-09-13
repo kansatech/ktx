@@ -13,8 +13,6 @@ workstation
 
 ## There are two separate SSH key relationships
 
-This is the important part.
-
 ### 1. Workstation -> SSHPiper
 
 The customer's/workstation's public key is stored in the route's:
@@ -40,7 +38,7 @@ Your workstation private key is not copied into the workload and should not be s
 ## Initialize a route
 
 ```bash
-sudo ktx-ssh-route init clienta site 172.28.4.2 2222
+sudo /srv/ktx/bin/ssh-route init clienta site 172.28.4.2 2222
 ```
 
 The helper creates:
@@ -56,46 +54,55 @@ The helper creates:
 
 The command prints the mapping public key. Install that printed public key in the upstream `site` account's `authorized_keys`. A module's instance-creation procedure should automate this when possible.
 
-`root` routes are prohibited. The external login `ktx` is reserved for the Host Core route to `ktx@127.0.0.1:2222`.
+Login and upstream-user names must match `[a-z_][-a-z0-9_]{0,31}`. Dots, uppercase names, path components, and `root` are rejected. Workload routes may not target loopback or the host `ktx` account. The external login `ktx` is reserved for the Host Core route to `ktx@127.0.0.1:2222`.
 
 ## Authorize a workstation/customer key
+
+Supply one or more plain public-key lines. Authorized-key options and SSH certificates are rejected: this helper does not implement their restrictions at the proxy. Keys are identified by their key bytes; changing a comment does not bypass revocation.
 
 From a public-key file:
 
 ```bash
-sudo ktx-ssh-route authorize clienta /path/to/customer-key.pub
+sudo /srv/ktx/bin/ssh-route authorize clienta /path/to/customer-key.pub
 ```
 
 Or pipe a key through stdin:
 
 ```bash
-cat /path/to/customer-key.pub | sudo ktx-ssh-route authorize clienta -
+cat /path/to/customer-key.pub | sudo /srv/ktx/bin/ssh-route authorize clienta -
 ```
 
 ## Trust the upstream host key
 
-`known_hosts` tells SSHPiper which SSH host identity is valid for the upstream hop. The previously documented `known_hosts-line.txt` is not a special KTX file; it is simply one or more lines in normal OpenSSH `known_hosts` format.
-
-Prefer deriving this from the workload's persisted SSH host-key material. If you intentionally use `ssh-keyscan`, validate the fingerprint independently before trusting it.
-
-Temporary-file form:
-
-```bash
-ssh-keyscan -p 2222 172.28.4.2 > known_hosts-line.txt
-sudo ktx-ssh-route trust clienta known_hosts-line.txt
-rm known_hosts-line.txt
-```
-
-Or directly through stdin:
+`known_hosts` pins the upstream SSH server's host identity. Use the persisted
+workload host public key when available. When using `ssh-keyscan`, stage the
+result and compare its fingerprint through an independent trusted channel
+(such as the workload console) **before** installing it:
 
 ```bash
-ssh-keyscan -p 2222 172.28.4.2 | sudo ktx-ssh-route trust clienta -
+scan=$(mktemp)
+ssh-keyscan -p 2222 172.28.4.2 > "$scan"
+ssh-keygen -lf "$scan"
+# Stop here and compare with the upstream console's host-key fingerprint.
 ```
+
+Only after the fingerprints match:
+
+```bash
+sudo /srv/ktx/bin/ssh-route trust clienta "$scan"
+rm -- "$scan"
+```
+
+The input uses ordinary known_hosts lines with the literal target address:
+`[172.28.4.2]:2222`, or an unbracketed IPv4 address for port 22. Hashed names,
+wildcards, and certificate-authority markers are outside this helper's contract.
+`trust` replaces that route's pinned host-key set. Stdin (`-`) is also accepted
+for input already verified independently; scanning alone does not establish trust.
 
 ## Inspect
 
 ```bash
-sudo ktx-ssh-route show clienta
+sudo /srv/ktx/bin/ssh-route show clienta
 ```
 
 This shows the upstream target, authorized-key count, known-host count, and mapping public key.
@@ -115,11 +122,11 @@ ssh -vvv clienta@PUBLIC_HOST
 ## Remove or revoke
 
 ```bash
-sudo ktx-ssh-route revoke clienta /path/to/customer-key.pub
-sudo ktx-ssh-route remove clienta
+sudo /srv/ktx/bin/ssh-route revoke clienta /path/to/customer-key.pub
+sudo /srv/ktx/bin/ssh-route remove clienta
 ```
 
-The reserved `ktx` Host Core route cannot be removed with the normal helper.
+The reserved `ktx` Host Core route cannot be removed, and the helper refuses to revoke its last caller key. Existing connections are unaffected by revocation/removal; terminate them separately if incident response requires it.
 
 ## Do I restart SSHPiper after editing a route?
 

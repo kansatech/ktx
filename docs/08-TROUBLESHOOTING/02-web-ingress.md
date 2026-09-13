@@ -17,14 +17,14 @@ sudo ufw status
 
 ```bash
 systemctl status traefik --no-pager
-journalctl -u traefik -n 150 --no-pager
-tail -n 100 /srv/ktx/logs/traefik/traefik.log
+sudo journalctl -u traefik -n 150 --no-pager
+sudo tail -n 100 /srv/ktx/logs/traefik/traefik.log
 ```
 
 ## 4. Route file
 
 ```bash
-sudo ktx-web-route show example
+sudo /srv/ktx/bin/web-route show example
 ```
 
 ## 5. Backend from host

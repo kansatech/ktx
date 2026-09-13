@@ -3,7 +3,7 @@
 ## Inventory
 
 ```bash
-sudo ktx-net list
+sudo /srv/ktx/bin/net list
 sudo docker network ls
 sudo docker network inspect ktx-net-example
 ip route | grep 172.28

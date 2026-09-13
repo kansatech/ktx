@@ -1,12 +1,12 @@
-# Build Host — ktx-build-26
+# Build Host — build.example.invalid
 
 Build exists to create trusted Host Core artifacts and future template artifacts.
 
 Allowed/expected:
 
 - Git/source checkouts;
-- Go 1.26.x toolchain required for current SSHPiper builds;
-- compilers/build utilities needed by future template packs;
+- pinned upstream native binaries (no Go toolchain is required);
+- compilers/build utilities needed by future modules;
 - direct upstream downloads used to create pinned releases;
 - test Docker networks and disposable workloads.
 

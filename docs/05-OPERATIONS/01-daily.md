@@ -3,7 +3,7 @@
 Automate alerts where convenient, but these are the useful host questions:
 
 ```bash
-sudo ktx-host-check
+sudo /srv/ktx/bin/host-check
 sudo docker ps
 sudo docker stats --no-stream
 free -h

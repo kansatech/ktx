@@ -7,7 +7,7 @@
 - [ ] Rotate affected administrator/host-held credentials
 - [ ] Prefer rebuild if host control compromise is credible
 - [ ] Restore Host Core from trusted artifacts
-- [ ] Restore workloads through template packs
+- [ ] Restore workloads through modules
 - [ ] Verify public ingress
 - [ ] Document timeline/root cause
 - [ ] Update Host Core controls/docs

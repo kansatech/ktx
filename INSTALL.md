@@ -1,213 +1,146 @@
-# Install a New KTX Host
+# Install KTX Host Core
 
-This is the single authoritative fresh-host procedure for KTX Host Core. The documents under `docs/` explain architecture, lifecycle, operations, recovery, and module contracts; they intentionally do not repeat the package-install sequence.
+This is the only fresh-host setup procedure. Use a fresh **Ubuntu 24.04 LTS** host
+(x86_64 or arm64) and a checkout directly at `/srv/ktx`. This release candidate
+still needs the Linux acceptance checks in [RC-REVIEW.md](RC-REVIEW.md).
 
-KTX currently targets a fresh **Ubuntu 24.04 LTS** host.
+Before starting, the **`ktx` account already exists**, belongs to `sudo`, has home
+`/home/ktx`, and has a local password for sudo. KTX does not create or reset it.
+Have a working provider/VM console and keep it open throughout installation.
+Allow public TCP 22 at the provider firewall; add 80/443 before finishing.
 
-## Before you start
+Examples use reserved names/addresses. Replace `SERVER` with the host's address;
+replace `host.example.invalid` and `admin@example.com` with your intended values.
 
-Have provider/VM console access available and keep the original console/session open until the final SSHPiper-backed SSH login is proven.
+## 1. Clone and bootstrap — on the server console
 
-Choose the hostname/environment, for example:
-
-```text
-ktx-build-26   build
-ktx-dev-26     dev
-ktx-prod-26    prod
-```
-
-## 1. Manually create the KTX administrator
-
-KTX deliberately does **not** create administrator identities. From the initial provider/root console:
+Only Git and its HTTPS trust store are needed before cloning. All remaining host
+packages are installed once by bootstrap. Run these commands from an existing
+sudo-capable console account:
 
 ```bash
-apt update
-apt install -y git ca-certificates sudo
-adduser ktx
-usermod -aG sudo ktx
-```
-
-`adduser` prompts you for the local `ktx` password. Keep that password: after SSH becomes key-only it is still the normal password used by `sudo`.
-
-Root will not be a KTX SSH login.
-
-Create `/srv/ktx` for the `ktx` administrator and clone Host Core as that user:
-
-```bash
-install -d -o ktx -g ktx -m 0755 /srv/ktx
+sudo apt-get update
+sudo apt-get install -y git ca-certificates
+sudo install -d -o ktx -g ktx -m 0755 /srv/ktx
 sudo -u ktx git clone https://github.com/Kansatech/ktx.git /srv/ktx
 cd /srv/ktx
-sudo -u ktx ./bin/ktx-validate-repo
 ```
 
-For dev/prod, check out the exact Host Core tag you intend to deploy before continuing.
-
-## 2. Bootstrap the host
-
-Example:
+For a release deployment, select the reviewed release tag as `ktx` before running
+its scripts. Do not deploy an arbitrary moving branch on production.
 
 ```bash
-sudo ./bin/ktx-init bootstrap --hostname ktx-build-26 --env build
+sudo ./bin/init bootstrap --hostname host.example.invalid --env build
+sudo -u ktx ./bin/validate-repo
 ```
 
-`bootstrap` validates the already-existing `ktx` account and sudo membership, then in one pass:
+Use `build`, `dev`, or `prod` for the environment. Bootstrap installs Ubuntu
+prerequisites, creates ignored runtime directories, sets hostname/UTC, enables
+Chrony/rsyslog, and temporarily permits password or public-key SSH **only for
+`ktx`**. It backs up the original SSH configuration, installs a complete KTX
+policy, disables socket activation, and runs OpenSSH directly on TCP 22.
 
-- installs the normal Host Core prerequisites (including Midnight Commander, because civilized servers have `mc`);
-- creates the local `/srv/ktx` runtime layout;
-- sets the hostname and UTC;
-- disables root SSH;
-- temporarily permits password SSH **only** for `ktx` on public TCP 22;
-- enables time synchronization and host logging.
+The scripts print each phase and leave package/service errors visible. For
+source inspection, read [bin/init](bin/init); it does not download and execute
+an installer script.
 
-It does not create `ktx`, change its password, or create another administrator.
+## 2. Install and prove your key — from your workstation
 
-## 3. Prove password SSH, install your key, then prove key SSH
-
-From a **second terminal on your workstation**:
-
-```bash
-ssh ktx@SERVER
-```
-
-Use the `ktx` password created in step 1. Leave your provider/root console and any working SSH session open.
-
-If you need a workstation key:
+If needed, create an Ed25519 key on your workstation; keep the private key there:
 
 ```bash
 ssh-keygen -t ed25519 -a 64
 ```
 
-### Linux/macOS with ssh-copy-id
+On Linux/macOS, install the public key using the temporary `ktx` password:
 
 ```bash
-ssh-copy-id ktx@SERVER
+ssh-copy-id -i ~/.ssh/id_ed25519.pub ktx@SERVER
 ```
 
-### Windows/OpenSSH without ssh-copy-id
-
-For the normal key:
+On Windows PowerShell:
 
 ```powershell
-Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub | ssh ktx@SERVER "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys"
+Get-Content "$HOME/.ssh/id_ed25519.pub" | ssh ktx@SERVER "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys"
 ```
 
-For a specifically named key such as `id_ed25519_ktx`:
-
-```powershell
-Get-Content $env:USERPROFILE\.ssh\id_ed25519_ktx.pub | ssh ktx@SERVER "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys"
-```
-
-Now explicitly prove the key in another new connection. If it is a named key:
-
-```powershell
-ssh ktx@SERVER -i $env:USERPROFILE\.ssh\id_ed25519_ktx
-```
-
-**Do not continue until a new SSH session works with the public key.**
-
-## 4. Put all public SSH through SSHPiper
-
-From the still-open `ktx` session or provider console:
+Now prove a **new public-key-only connection**, with password fallback disabled.
+This command works in Bash and PowerShell; adjust the identity path if needed:
 
 ```bash
-sudo /srv/ktx/bin/ktx-init secure-ssh
+ssh -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no -o HostKeyAlgorithms=ssh-ed25519 ktx@SERVER
 ```
 
-The final SSH path becomes:
+A private-key passphrase prompt is normal. An account-password prompt is not
+proof of key authentication. Do not proceed until this connection works.
+If the host identity differs from a previously cached key, compare the console's
+`sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` with the client warning
+before changing the workstation's known_hosts entry.
+
+## 3. Cut over SSH — on the server, keeping console access
+
+```bash
+sudo /srv/ktx/bin/init secure-ssh
+```
+
+The command installs the pinned SSHPiper binary/plugin, creates the reserved
+`ktx` route, copies the proven caller keys, and authorizes a separate mapping key
+for the loopback hop. It tests that mapping key against temporary loopback
+OpenSSH **before** changing public SSH. SSHPiper retains the Ed25519 host identity.
+
+When prompted, repeat the key-only workstation command from step 2 in another
+terminal. After that new login succeeds, type **`VERIFIED` in the terminal running
+cutover** within 180 seconds. A failed check, interruption, or timeout attempts
+to restore the previous OpenSSH policy on public 22. Keep the console available:
+a power failure or forced process kill cannot be recovered by a shell trap.
+
+The confirmed state is:
 
 ```text
-Internet :22
-    -> native SSHPiper
-        -> username ktx
-            -> ktx@127.0.0.1:2222
-                -> native OpenSSH
+public TCP 22 -> SSHPiper -> login ktx -> native OpenSSH at 127.0.0.1:2222
 ```
 
-The command:
+Only SSHPiper listens publicly on 22. Native OpenSSH is key-only, root SSH is
+disabled, and `ssh.socket` is masked/inactive. TCP 2222 is never opened publicly.
 
-- installs the pinned SSHPiper release and systemd unit;
-- creates the reserved `ktx` SSHPiper route;
-- uses your proven workstation public key(s) for the **client -> SSHPiper** authentication hop;
-- generates a separate SSHPiper mapping key for the **SSHPiper -> OpenSSH** hop and authorizes it for `ktx`;
-- preserves the existing OpenSSH Ed25519 host identity on public TCP 22;
-- disables Ubuntu's `ssh.socket` activation for the final KTX state;
-- binds native OpenSSH directly to **127.0.0.1:2222 only**;
-- disables SSH password authentication;
-- starts SSHPiper as the only public TCP 22 listener.
+## 4. Finish and verify — on the server
 
-There is no public port 2222.
-
-**Keep the old session/console open.** From another terminal prove the final path:
+Before allocating networks, check that the default `172.28.0.0/16` pool does not
+overlap your LAN, VPN, provider routes, or Docker networks. If it does, edit
+`KTX_DOCKER_POOL` in `/srv/ktx/config/host.conf` now (private IPv4, /16 through /28).
+Do not change the pool after allocation.
 
 ```bash
-ssh ktx@SERVER
-```
-
-or, for your named key:
-
-```powershell
-ssh ktx@SERVER -i $env:USERPROFILE\.ssh\id_ed25519_ktx
-```
-
-On the server, the final listeners should look conceptually like:
-
-```text
-:22                sshpiperd
-127.0.0.1:2222     sshd
-```
-
-Verify if desired:
-
-```bash
-sudo ss -lntp | grep -E ':(22|2222)\b'
-sudo systemctl status ssh sshpiper --no-pager
-```
-
-## 5. Finish Host Core
-
-Only after the final `ssh ktx@SERVER` path works:
-
-```bash
-sudo /srv/ktx/bin/ktx-init finish --acme-email you@example.com
-```
-
-`finish` installs/configures:
-
-- Docker Engine + Compose plugin from Docker's official Ubuntu repository;
-- pinned native Traefik;
-- native rsyslog receiver/log rotation;
-- KTX command symlinks;
-- UFW baseline;
-- Traefik ACME state/configuration.
-
-The public Host Core baseline is:
-
-```text
-22/tcp   SSHPiper
-80/tcp   Traefik HTTP/ACME -> HTTPS
-443/tcp  Traefik HTTPS
-```
-
-Native OpenSSH `2222/tcp` exists only on `127.0.0.1` and is not a public firewall rule.
-
-## 6. Verify
-
-```bash
-sudo ktx-host-check
+sudo /srv/ktx/bin/init finish --acme-email admin@example.com
+sudo /srv/ktx/bin/host-check
 sudo ufw status verbose
 sudo docker version
 sudo docker compose version
 sudo systemctl --no-pager --full status ssh sshpiper docker traefik rsyslog
 ```
 
-From your workstation:
+Finish applies UFW before starting the syslog receiver/web ingress, installs
+Docker CE/Compose and pinned Traefik, and configures service permissions, ACME,
+and log rotation. It preserves an existing Traefik static file on retry and
+refuses to silently overwrite a different Docker configuration or remove
+conflicting container packages. It does not add `ktx` to the Docker group.
 
-```bash
-ssh ktx@SERVER
-```
+Review all existing UFW/provider rules: the public baseline is **22, 80, 443/TCP**.
+Syslog TCP 514 is allowed only from the chosen pool arriving on KTX bridges;
+there is no public rule for 2222 or 514. Docker-published ports can bypass UFW,
+so ordinary modules must not publish host ports. Verify IPv4 and, when enabled,
+IPv6 from outside the host.
 
-The host is now ready for independent KTX module repositories under `/srv/ktx/images/`.
+Prove a new workstation SSH login again, then rehearse a reboot using the
+[reboot checklist](docs/11-CHECKLISTS/prod-reboot.md). The host can then accept
+independent module repositories under `/srv/ktx/images/`.
 
-## Re-running setup
+## Retries, updates, and recovery
 
-The phases are intentionally explicit. Do not rerun `bootstrap` on an established host just to update it. Host Core updates follow `docs/04-LIFECYCLE/`.
+Completed phases refuse to run again. A failed `secure-ssh` or `finish` can be
+retried after correcting its reported error. Inspect incomplete bootstrap from
+the console before retrying. Do not delete completion files just to rerun setup.
+
+Use [lifecycle instructions](docs/04-LIFECYCLE/01-core-release-lifecycle.md) for
+updates, [SSH troubleshooting](docs/08-TROUBLESHOOTING/01-host-admin-ssh.md) for
+access problems, and [recovery](docs/07-RECOVERY/03-full-host-rebuild.md) for rebuilds.

@@ -1,13 +1,13 @@
-# Dev Host — ktx-dev-26
+# Dev Host — dev.example.invalid
 
 Dev validates the exact Host Core release produced by build.
 
-- no normal recompilation of SSHPiper;
+- no rebuilding of the pinned native upstream binaries;
 - install exact promoted Traefik/SSHPiper binaries;
 - exercise deterministic networks;
 - exercise native Traefik route creation/removal;
 - exercise SSHPiper route creation/removal;
-- permit private/debug workload port mappings only when a template pack documents them;
+- permit private/debug workload port mappings only when a module documents them;
 - use staging ACME/test domains during repeated certificate tests;
 - use sanitized/nonproduction workload data.
 

@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""Allocate private Docker /28 networks and record their fixed addresses."""
+import argparse
+import ipaddress
+import json
+import os
+import pathlib
+import re
+import subprocess
+import sys
+import tempfile
+
+CONF = pathlib.Path('/srv/ktx/config/host.conf')
+REGISTRY = pathlib.Path('/srv/ktx/config/networks.tsv')
+FIELDS = ('name', 'subnet', 'gateway', 'primary', 'bridge', 'idx')
+NAME_RE = re.compile(r'[a-z0-9][a-z0-9_-]{0,62}')
+
+
+def read_config():
+    values = {}
+    for line in CONF.read_text().splitlines():
+        if line.strip() and not line.lstrip().startswith('#'):
+            key, value = line.split('=', 1)
+            if key.strip() in values:
+                raise ValueError(f'Duplicate host.conf key: {key}')
+            values[key.strip()] = value.strip()
+    pool = ipaddress.ip_network(values['KTX_DOCKER_POOL'])
+    if pool.version != 4 or not 16 <= pool.prefixlen <= 28 or not pool.is_private:
+        raise ValueError('KTX_DOCKER_POOL must be a private IPv4 /16 through /28.')
+    prefix = values.get('KTX_NETWORK_PREFIX', 'ktx-net-')
+    if not NAME_RE.fullmatch(prefix):
+        raise ValueError('Invalid KTX_NETWORK_PREFIX.')
+    return pool, prefix
+
+
+def allocation(pool, index):
+    subnet = ipaddress.ip_network((int(pool.network_address) + index * 16, 28))
+    if index < 0 or not subnet.subnet_of(pool):
+        raise ValueError('Registry index is outside KTX_DOCKER_POOL; do not change an allocated pool.')
+    return dict(subnet=str(subnet), gateway=str(subnet[1]), primary=str(subnet[2]), bridge=f'ktx{index:04x}')
+
+
+def load(pool):
+    rows = []
+    names, indices = set(), set()
+    for number, line in enumerate(REGISTRY.read_text().splitlines(), 1):
+        if not line.strip() or line.startswith('#'):
+            continue
+        parts = line.split('\t')
+        if len(parts) != len(FIELDS):
+            raise ValueError(f'Malformed registry row {number}; repair it before making changes.')
+        row = dict(zip(FIELDS, parts))
+        row['idx'] = int(row['idx'])
+        if not NAME_RE.fullmatch(row['name']) or row['name'] in names or row['idx'] in indices:
+            raise ValueError(f'Invalid or duplicate registry row {number}.')
+        expected = allocation(pool, row['idx'])
+        if any(row[key] != value for key, value in expected.items()):
+            raise ValueError(f'Registry row {number} disagrees with the configured pool/address contract.')
+        names.add(row['name'])
+        indices.add(row['idx'])
+        rows.append(row)
+    return rows
+
+
+def save(rows):
+    descriptor, filename = tempfile.mkstemp(prefix='.networks-', dir=REGISTRY.parent)
+    temporary = pathlib.Path(filename)
+    try:
+        with os.fdopen(descriptor, 'w') as stream:
+            for row in sorted(rows, key=lambda item: item['idx']):
+                stream.write('\t'.join(str(row[key]) for key in FIELDS) + '\n')
+            stream.flush()
+            os.fsync(stream.fileno())
+        temporary.chmod(0o644)
+        temporary.replace(REGISTRY)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def docker(*args):
+    # Let Docker print its own diagnostic instead of hiding stderr in a traceback.
+    return subprocess.run(['docker', *args], text=True, stdout=subprocess.PIPE, check=True).stdout
+
+
+def show(row):
+    for key in FIELDS[:-1]:
+        print(f'{key}: {row[key]}')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest='command', required=True)
+    for command in ('create', 'show', 'remove'):
+        commands.add_parser(command).add_argument('instance')
+    commands.add_parser('list')
+    args = parser.parse_args()
+    if os.geteuid() != 0:
+        sys.exit('Run net with sudo.')
+    import fcntl
+
+    # Allocation/removal and registry replacement are one serial operation.
+    with open('/run/lock/ktx-net.lock', 'w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        pool, prefix = read_config()
+        rows = load(pool)
+        if args.command == 'list':
+            print('NAME\tSUBNET\tGATEWAY\tPRIMARY\tBRIDGE')
+            for row in sorted(rows, key=lambda item: item['idx']):
+                print('\t'.join(row[key] for key in FIELDS[:-1]))
+            return
+        if not NAME_RE.fullmatch(args.instance) or args.instance == prefix:
+            sys.exit('Invalid instance/network name.')
+        name = args.instance if args.instance.startswith(prefix) else prefix + args.instance
+        if not NAME_RE.fullmatch(name):
+            sys.exit('Use a lowercase instance/network name of at most 63 characters including its prefix.')
+        row = next((item for item in rows if item['name'] == name), None)
+        if args.command == 'show':
+            if row is None:
+                sys.exit('Network is not registered.')
+            show(row)
+        elif args.command == 'create':
+            if row is not None:
+                sys.exit('Already registered; use show. See recovery docs if the Docker network is missing.')
+            used = {item['idx'] for item in rows}
+            index = next((i for i in range(pool.num_addresses // 16) if i not in used), None)
+            if index is None:
+                sys.exit('Address pool exhausted.')
+            row = dict(name=name, idx=index, **allocation(pool, index))
+            docker('network', 'create', '--driver', 'bridge', '--subnet', row['subnet'],
+                   '--gateway', row['gateway'], '--opt',
+                   f"com.docker.network.bridge.name={row['bridge']}", name)
+            try:
+                save([*rows, row])
+            except OSError:
+                print(f'Registry write failed; removing the newly created empty network {name}.', file=sys.stderr)
+                docker('network', 'rm', name)
+                raise
+            show(row)
+        elif args.command == 'remove':
+            if row is None:
+                sys.exit('Network is not registered.')
+            network = json.loads(docker('network', 'inspect', name))[0]
+            configs = network.get('IPAM', {}).get('Config', [])
+            if (network['Driver'] != 'bridge' or len(configs) != 1
+                    or configs[0].get('Subnet') != row['subnet']
+                    or configs[0].get('Gateway') != row['gateway']
+                    or network.get('Options', {}).get('com.docker.network.bridge.name') != row['bridge']):
+                sys.exit('Docker network differs from the registry; refusing removal.')
+            docker('network', 'rm', name)
+            # On write failure retain the old row, so its addresses cannot be reused.
+            save([item for item in rows if item['name'] != name])
+            print(f'Removed {name}.')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
+        sys.exit(f'net: {error}')

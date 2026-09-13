@@ -20,6 +20,4 @@
 - https://github.com/tg123/sshpiper/tags
 - https://pkg.go.dev/github.com/tg123/sshpiper/plugin/workingdir
 
-## Go
-- https://go.dev/doc/install
-- https://go.dev/doc/devel/release
+Implementation-specific sources checked for this RC are in [SOURCES.md](../../SOURCES.md).

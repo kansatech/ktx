@@ -1,26 +1,31 @@
 # Host Core Backup Scope
 
-GitHub contains the portable Host Core source. A host backup therefore focuses on what Git deliberately does not contain.
-
-Back up:
-
-```text
-/srv/ktx/config/
-/srv/ktx/secrets/
-/srv/ktx/containers/
-/srv/ktx/data/                 selected native/workload state according to module docs
-/srv/ktx/releases/             retained approved artifacts if not stored elsewhere
-/etc/ssh/sshd_config.d/10-ktx-admin.conf
-```
-
-Optionally retain:
+Git restores portable source. A protected off-host backup restores host identity,
+configuration, and state. Back up at least:
 
 ```text
-/srv/ktx/logs/
+/srv/ktx/config/                  includes private SSHPiper mapping keys
+/srv/ktx/secrets/                 includes the public SSH listener's private host key
+/srv/ktx/containers/              instance definitions; may contain credentials
+/srv/ktx/data/                    native ACME and selected module state
+/etc/ssh/                        OpenSSH policy and host identities
+/etc/default/ssh
+/etc/systemd/system/             enabled units, masks, and local overrides
+/etc/systemd/system-generators/  sshd-socket-generator mask
+/etc/ufw/
+/etc/docker/daemon.json
+/home/ktx/.ssh/authorized_keys    includes the SSHPiper mapping public key
 ```
 
-according to log-retention policy.
+Record the Host Core tag/commit, native binary versions/checksums, package
+versions, and numeric service UIDs/GIDs. Retain approved archives if upstream
+downloads cannot be relied upon during recovery. Module repositories and their
+persistent data also need the backups required by their own procedures.
 
-You do **not** need to back up the `Kansatech/ktx` Git history as the only recovery source if GitHub is authoritative, but keeping an off-host mirror/export is prudent.
+Preserve ownership, modes, symlinks, and ACLs (for example, use a backup tool with
+ACL/xattr support). Encrypt the backup and restrict access: `config/` and ACME
+state are confidential even though their paths are not named `secrets/`.
 
-Module/workload repositories and their persistent data follow their own backup documents.
+Take application-consistent module backups, and stop or quiesce writers when
+capturing native state. Logs are optional according to retention policy. Keep a
+source mirror/export if GitHub is not an acceptable single recovery dependency.

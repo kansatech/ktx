@@ -9,3 +9,12 @@
 *.secret
 *.key
 *.pem
+
+# Host-specific material never belongs in reusable module source.
+/config/
+/secrets/
+/data/
+/logs/
+/instances/
+*.local
+*.secrets

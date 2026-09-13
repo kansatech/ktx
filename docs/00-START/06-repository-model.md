@@ -39,19 +39,14 @@ cache/
 
 These directories are local to a server or contain separate repositories.
 
-Run:
-
-```bash
-sudo /srv/ktx/bin/ktx-init-layout
-```
-
-after cloning to create the ignored tree.
+The bootstrap phase in [INSTALL.md](../../INSTALL.md) creates the ignored tree.
+`init-layout` is also available for recovery; it preserves existing permissions.
 
 ## Separate module repositories
 
 `images/` is a workspace containing independent Git repositories.
 
-Example on `ktx-build-26`:
+Example on `build.example.invalid`:
 
 ```bash
 cd /srv/ktx/images
@@ -93,7 +88,7 @@ prod instance:
 
 ## Configuration vs secrets
 
-`config/` contains server-specific configuration that is not secret but should not be committed to the portable Host Core repository.
+`config/` contains server-specific configuration, including the SSHPiper route mapping private keys. Treat its backup as confidential, just like `secrets/`.
 
 `secrets/` contains private keys, passwords, tokens, and other confidential material.
 
@@ -124,8 +119,10 @@ Hosts deploy **tags**:
 
 ```bash
 git -C /srv/ktx fetch --tags
-git -C /srv/ktx checkout --detach v2026.09.11-r2
-sudo /srv/ktx/bin/ktx-apply-host
+git -C /srv/ktx checkout --detach v2026.09.11-rc.1
+sudo /srv/ktx/bin/apply-host
 ```
 
 The exact tag is first tested on build, then dev, then prod.
+
+The checkout is writable by the sudo-capable `ktx` administrator and is part of the host trust boundary. Never grant workload/service accounts write access to its source or top-level directory. `/etc` units are installed copies; review and run `/srv/ktx/bin/apply-host` after changing tracked units. That command does not reset runtime ownership or restart services.

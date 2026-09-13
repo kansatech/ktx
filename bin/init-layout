@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT=/srv/ktx
+
+[[ $(id -u) -eq 0 ]] || { echo 'Run init-layout with sudo.' >&2; exit 1; }
+[[ -f $ROOT/VERSION ]] || { echo "$ROOT is not a Host Core checkout." >&2; exit 1; }
+id ktx >/dev/null
+
+# Only create missing directories. Reapplying source must not reset live ACLs,
+# service ownership, or module-specific permissions.
+for name in config containers data releases recovery tmp cache logs secrets images; do
+  [[ ! -L $ROOT/$name ]] || { echo "Refusing symlink: $ROOT/$name" >&2; exit 1; }
+  [[ ! -e $ROOT/$name || -d $ROOT/$name ]] || exit 1
+  [[ ! -d $ROOT/$name ]] || continue
+  case "$name" in
+    secrets|recovery|tmp|cache|containers) install -d -m 0700 "$ROOT/$name" ;;
+    logs) install -d -m 0711 "$ROOT/$name" ;;
+    images) install -d -o ktx -g ktx -m 0755 "$ROOT/$name" ;;
+    *) install -d -m 0755 "$ROOT/$name" ;;
+  esac
+done
+
+if [[ ! -e $ROOT/config/host.conf ]]; then
+  install -o root -g root -m 0644 "$ROOT/host/defaults/host.conf.example" "$ROOT/config/host.conf"
+fi
+if [[ ! -e $ROOT/config/networks.tsv ]]; then
+  install -o root -g root -m 0644 /dev/null "$ROOT/config/networks.tsv"
+fi
+echo "Local layout ready under $ROOT; existing permissions preserved."

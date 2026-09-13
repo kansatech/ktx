@@ -35,11 +35,11 @@ sudo systemctl status ssh.socket ssh.service --no-pager
 Final KTX state:
 
 ```text
-ssh.socket    inactive/disabled
+ssh.socket    inactive/masked
 ssh.service   active
 ```
 
-If a failed/older cutover leaves `ssh.socket` listening publicly on 22, use provider console and follow the current `ktx-init secure-ssh` procedure rather than manually exposing another management port.
+If a failed cutover leaves public OpenSSH, inspect the saved pre-cutover configuration from the provider console. Retry `secure-ssh` only for an incomplete installation using this RC. Earlier revisions require the reviewed console migration in the [release lifecycle](../04-LIFECYCLE/01-core-release-lifecycle.md); do not rerun bootstrap on them.
 
 ## Check services
 
@@ -52,7 +52,7 @@ sudo journalctl -u ssh -n 100 --no-pager
 ## Check the reserved route
 
 ```bash
-sudo ktx-ssh-route show ktx
+sudo /srv/ktx/bin/ssh-route show ktx
 ```
 
 Upstream must be:
@@ -102,11 +102,33 @@ Compare that key with the `ktx` route's downstream `authorized_keys`. For worklo
 From provider console:
 
 ```bash
-sudo /srv/ktx/bin/ktx-install-native sshpiper
-sudo /srv/ktx/bin/ktx-apply-host
+sudo /srv/ktx/bin/install-native sshpiper
+sudo /srv/ktx/bin/apply-host
 sudo systemctl restart sshpiper
 ```
 
 Inspect logs before repeatedly restarting it.
 
 Provider console is the break-glass route; there is intentionally no second public SSH port.
+
+## Configuration and permissions
+
+KTX installs one complete `/etc/ssh/sshd_config`; drop-ins are not included.
+Compare it with `/srv/ktx/host/ssh/sshd_config`. Bootstrap's original configuration
+is saved under `/srv/ktx/recovery/ssh-before-bootstrap`, and the last cutover
+backup is `/srv/ktx/recovery/sshd-before-cutover`. Inspect those from the console;
+restoring the cutover backup can re-enable temporary password SSH on public 22.
+
+Check account access without exposing private-key contents:
+
+```bash
+sudo namei -l /srv/ktx/config/sshpiper/routes/ktx/id_rsa
+sudo getfacl /srv/ktx/secrets
+sudo -u sshpiper test -r /srv/ktx/secrets/sshpiper/server_key
+sudo systemctl cat ssh.service sshpiper.service
+sudo systemctl show ssh.service -p ExecStart -p KillMode -p Requires
+```
+
+The loopback hop sees source `127.0.0.1`, not the workstation address. Use SSHPiper
+logs for the public connection source. A read-access check cannot prove the key
+is authorized upstream; the real two-hop login remains the acceptance test.

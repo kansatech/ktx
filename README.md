@@ -1,73 +1,47 @@
 # KTX Host Core
 
-`Kansatech/ktx` is the native host framework cloned directly into `/srv/ktx`.
+KTX is cloned directly into `/srv/ktx` and manages an Ubuntu 24.04 host: Docker,
+native Traefik, SSHPiper, OpenSSH, rsyslog, firewall policy, and the network/ingress
+contract for independent container modules. Hosted applications live in their
+own repositories; this repository contains no deployable workload.
 
-It owns the Ubuntu/Docker host plumbing: **SSHPiper, Traefik, rsyslog, firewall policy, deterministic workload networking, Host Core lifecycle, and the contract used by separate KTX module repositories.** It expects a human-created sudo-capable `ktx` administrator account; Host Core does not create administrator identities.
+**Start with [INSTALL.md](INSTALL.md).** It is the single installation procedure.
+The sudo-capable `ktx` account must already exist. This is release candidate
+`2026.09.11-rc.1`; see [RC-REVIEW.md](RC-REVIEW.md) for validation and remaining gates.
 
-It does **not** contain PHP, Percona, Vaultwarden, Uptime Kuma, or other hosted workloads.
-
-## New server
-
-Follow **[INSTALL.md](INSTALL.md)**. It is the single authoritative fresh-host procedure; package-install commands are intentionally not repeated throughout the handbook.
-
-## SSH model
-
-There is only one public SSH ingress:
+## SSH
 
 ```text
-Internet :22 -> SSHPiper
-                  ├── ktx     -> 127.0.0.1:2222 -> host OpenSSH
-                  ├── clienta -> workload A
-                  └── clientb -> workload B
+Internet :22 -> native SSHPiper
+                  |-- ktx     -> 127.0.0.1:2222 -> native OpenSSH
+                  `-- example -> private workload SSH
 ```
 
-`root` is never an SSH login. Host OpenSSH becomes key-only and loopback-only during the `secure-ssh` cutover. `ktx` is the host administrator and uses `sudo` when root privilege is needed.
+SSHPiper is the only public SSH listener. Host OpenSSH is public-key-only,
+loopback-only, and permits `ktx` alone; root SSH and Ubuntu socket activation are
+disabled. Bootstrap temporarily permits password SSH while you establish a key.
 
-## Repository / installed layout
+## Source and local state
 
-```text
-/srv/ktx/
-├── .git/                    Kansatech/ktx history
-├── README.md
-├── INSTALL.md               one authoritative fresh-host procedure
-├── docs/                    architecture/lifecycle/operations/reference
-├── bin/                     Host Core commands
-├── host/                    tracked native-service defaults/units/versions
-├── module-template/         contract/skeleton for Kansatech/ktx-* repos
-│
-├── config/                  ignored: this server's config
-├── secrets/                 ignored: secrets/private keys
-├── images/                  ignored: separate module Git repositories
-├── containers/              ignored: instantiated server-specific configs
-├── data/                    ignored: persistent runtime data
-├── logs/                    ignored: runtime logs
-├── releases/                ignored: artifacts
-├── recovery/                ignored: recovery workspace
-└── tmp/                     ignored: scratch
-```
+| Tracked source | Ignored host-local state |
+|---|---|
+| `bin/` — readable host commands | `config/`, `secrets/` — configuration and credentials |
+| `host/` — service units, defaults, version pins | `data/`, `logs/` — persistent state and logs |
+| `docs/` — operating handbook and explanations | `containers/` — generated workload instances |
+| `module-template/` — authoring skeleton | `images/` — independent module Git checkouts |
+| Root installation/release documents | `releases/`, `recovery/`, `tmp/`, `cache/` |
 
-Example nested module checkout:
+Use explicit commands such as `sudo /srv/ktx/bin/host-check` and
+`sudo /srv/ktx/bin/net list`. Short names stay under `bin/`; KTX does not install
+global aliases named `init` or `net`. Native units/configs are copied to `/etc`
+by `apply-host`; checking out source does not automatically restart services.
 
-```text
-/srv/ktx/images/ktx-webphp85/.git -> Kansatech/ktx-webphp85
-```
+**Never run `git clean -fdx` or `git clean -ffdx` in `/srv/ktx`.** Those commands
+can delete the ignored configuration, secrets, module repositories, and data.
+Ignored state needs protected off-host backups; Git is not that backup.
 
-## Documentation
+## Handbook
 
-Use `docs/` when you need the **why**, lifecycle, troubleshooting, recovery, network contract, or module-authoring rules. Fresh-host package installation does not live there; `INSTALL.md` + `bin/ktx-init` are authoritative.
-
-Start with [QUICK-LOOKUP.md](QUICK-LOOKUP.md).
-
-## Git safety
-
-Never run this in `/srv/ktx`:
-
-```bash
-git clean -fdx
-```
-
-KTX intentionally stores ignored server state under the checkout. `-x` means "delete the things KTX intentionally told Git not to own." That is a surprisingly efficient way to ruin an afternoon.
-
-## Core rule
-
-**If it operates the KTX host, it belongs in `Kansatech/ktx`. If KTX merely hosts it, it belongs in a separate `Kansatech/ktx-*` repository.**
+[QUICK-LOOKUP.md](QUICK-LOOKUP.md) links to operations, architecture, networking,
+security, lifecycle, recovery, troubleshooting, and module authoring.
+Explanatory pages do not repeat the installation sequence.

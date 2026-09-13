@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""Manage SSHPiper workingdir routes, caller keys, and pinned upstream host keys."""
+import argparse
+import base64
+import ipaddress
+import os
+import pathlib
+import re
+import shutil
+import struct
+import subprocess
+import sys
+import tempfile
+
+ROOT = pathlib.Path('/srv/ktx/config/sshpiper/routes')
+# Match SSHPiper workingdir's username rule, including its 32-character limit.
+LOGIN_RE = re.compile(r'[a-z_][-a-z0-9_]{0,31}')
+KEY_RE = re.compile(r'(?:ssh-(?:ed25519|rsa)|ecdsa-sha2-nistp(?:256|384|521)|sk-ssh-ed25519@openssh.com|sk-ecdsa-sha2-nistp256@openssh.com)')
+
+
+def public_keys(text):
+    keys = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        fields = line.split()
+        if len(fields) < 2 or not KEY_RE.fullmatch(fields[0]):
+            raise ValueError('Use plain public keys without authorized_keys options or certificates.')
+        blob = base64.b64decode(fields[1], validate=True)
+        if len(blob) < 4:
+            raise ValueError('Invalid public-key encoding.')
+        length = struct.unpack('>I', blob[:4])[0]
+        if blob[4:4 + length] != fields[0].encode() or len(blob) <= 4 + length:
+            raise ValueError('Public-key type and encoding disagree.')
+        keys[fields[1]] = line
+    if not keys:
+        raise ValueError('No public keys supplied.')
+    # Ask OpenSSH to parse the complete key structures, not just base64 syntax.
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as stream:
+        filename = stream.name
+    try:
+        for line in keys.values():
+            pathlib.Path(filename).write_text(line + '\n')
+            subprocess.run(['ssh-keygen', '-l', '-f', filename], check=True, stdout=subprocess.DEVNULL)
+    finally:
+        pathlib.Path(filename).unlink()
+    return keys
+
+
+def read_input(filename):
+    return sys.stdin.read() if filename == '-' else pathlib.Path(filename).read_text()
+
+
+def write_private(target, content):
+    descriptor, filename = tempfile.mkstemp(prefix='.route-', dir=target.parent)
+    temporary = pathlib.Path(filename)
+    try:
+        with os.fdopen(descriptor, 'w') as stream:
+            stream.write(content)
+        temporary.chmod(0o600)
+        shutil.chown(temporary, user='sshpiper', group='sshpiper')
+        temporary.replace(target)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def check_route(path):
+    if path.is_symlink() or not path.is_dir():
+        raise ValueError('Route is missing or is a symlink.')
+    if any(item.is_symlink() or not item.is_file() for item in path.iterdir()):
+        raise ValueError('Unexpected directory/symlink inside route; inspect it manually.')
+
+
+def upstream(user, address, port, login):
+    if not LOGIN_RE.fullmatch(user) or user == 'root' or login == 'root':
+        raise ValueError('Invalid/root SSH user.')
+    ip = ipaddress.ip_address(address)
+    if not 1 <= port <= 65535:
+        raise ValueError('Invalid upstream port.')
+    if login == 'ktx':
+        if (user, str(ip), port) != ('ktx', '127.0.0.1', 2222):
+            raise ValueError('ktx is reserved for ktx@127.0.0.1:2222.')
+    elif user == 'ktx' or ip.is_loopback:
+        raise ValueError('Host administration must use the reserved ktx route.')
+    host = f'[{ip}]' if ip.version == 6 else str(ip)
+    return f'{user}@{host}:{port}'
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest='command', required=True)
+    initialize = commands.add_parser('init')
+    initialize.add_argument('login')
+    initialize.add_argument('upstream_user')
+    initialize.add_argument('ip')
+    initialize.add_argument('port', type=int)
+    for command in ('authorize', 'revoke', 'trust'):
+        subparser = commands.add_parser(command)
+        subparser.add_argument('login')
+        subparser.add_argument('file', help='public-key/known_hosts file, or - for stdin')
+    for command in ('show', 'remove'):
+        commands.add_parser(command).add_argument('login')
+    commands.add_parser('list')
+    args = parser.parse_args()
+    if os.geteuid() != 0:
+        sys.exit('Run ssh-route with sudo.')
+    import fcntl
+    import pwd
+
+    pwd.getpwnam('sshpiper')
+    os.umask(0o077)
+    if not ROOT.is_dir() or ROOT.is_symlink():
+        sys.exit('SSHPiper routes directory is missing/unsafe; complete Host Core SSH setup first.')
+    with open('/run/lock/ktx-ssh-route.lock', 'w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if args.command == 'list':
+            for path in sorted(ROOT.iterdir()):
+                if LOGIN_RE.fullmatch(path.name) and path.is_dir() and not path.is_symlink():
+                    print(path.name)
+            return
+        if not LOGIN_RE.fullmatch(args.login) or args.login == 'root':
+            sys.exit('Login must match [a-z_][-a-z0-9_]{0,31}; root is prohibited.')
+        path = ROOT / args.login
+        if args.command == 'init':
+            target = upstream(args.upstream_user, args.ip, args.port, args.login)
+            if path.exists() or path.is_symlink():
+                sys.exit('Route already exists; inspect it with show.')
+            staging = pathlib.Path(tempfile.mkdtemp(prefix='.route-', dir=ROOT))
+            try:
+                # The plugin requires the filename id_rsa for the upstream mapping key.
+                subprocess.run(['ssh-keygen', '-q', '-t', 'rsa', '-b', '4096', '-N', '',
+                                '-C', 'KTX mapping key', '-f', str(staging / 'id_rsa')], check=True)
+                (staging / 'sshpiper_upstream').write_text(target + '\n')
+                (staging / 'authorized_keys').touch()
+                (staging / 'known_hosts').touch()
+                for item in staging.iterdir():
+                    item.chmod(0o600)
+                    shutil.chown(item, user='sshpiper', group='sshpiper')
+                shutil.chown(staging, user='sshpiper', group='sshpiper')
+                staging.rename(path)
+            finally:
+                if staging.exists():
+                    shutil.rmtree(staging)
+            print('Install this mapping public key in the upstream account authorized_keys:')
+            print((path / 'id_rsa.pub').read_text(), end='')
+            return
+        check_route(path)
+        if args.command == 'show':
+            print('upstream:', (path / 'sshpiper_upstream').read_text().strip())
+            for name in ('authorized_keys', 'known_hosts'):
+                count = sum(bool(line.strip()) and not line.startswith('#')
+                            for line in (path / name).read_text().splitlines())
+                print(f'{name}: {count} entries')
+            print('mapping public key:', (path / 'id_rsa.pub').read_text().strip())
+        elif args.command == 'remove':
+            if args.login == 'ktx':
+                sys.exit('The reserved ktx host route cannot be removed.')
+            shutil.rmtree(path)
+            print(f'Removed {args.login}; existing connections are unaffected.')
+        elif args.command in ('authorize', 'revoke'):
+            supplied = public_keys(read_input(args.file))
+            target = path / 'authorized_keys'
+            existing = target.read_text()
+            keys = public_keys(existing) if existing.strip() else {}
+            if args.command == 'authorize':
+                keys.update(supplied)
+            else:
+                for blob in supplied:
+                    keys.pop(blob, None)
+                if args.login == 'ktx' and not keys:
+                    sys.exit('Refusing to revoke the last administrator key.')
+            content = '\n'.join(keys.values()) + ('\n' if keys else '')
+            write_private(target, content)
+            print('Caller keys updated; new connections use them without a restart.')
+        elif args.command == 'trust':
+            hostport = (path / 'sshpiper_upstream').read_text().strip().split('@', 1)[1]
+            host, port = hostport.rsplit(':', 1)
+            host = host.strip('[]')
+            expected = host if port == '22' else f'[{host}]:{port}'
+            lines = [line.strip() for line in read_input(args.file).splitlines()
+                     if line.strip() and not line.lstrip().startswith('#')]
+            if not lines:
+                sys.exit('No known_hosts entries supplied.')
+            for line in lines:
+                fields = line.split()
+                if len(fields) < 3 or expected not in fields[0].split(','):
+                    sys.exit(f'Each known_hosts line must name the literal upstream {expected}.')
+                public_keys(' '.join(fields[1:]))
+            write_private(path / 'known_hosts', '\n'.join(lines) + '\n')
+            print('Upstream host keys replaced; new connections use them without a restart.')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
+        sys.exit(f'ssh-route: {error}')

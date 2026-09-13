@@ -3,43 +3,43 @@
 ## KTX
 
 ```bash
-ktx-host-check
-ktx-net list
-ktx-net show NAME
-ktx-web-route list
-ktx-web-route show NAME
-ktx-ssh-route list
-ktx-ssh-route show LOGIN
+sudo /srv/ktx/bin/host-check
+sudo /srv/ktx/bin/net list
+sudo /srv/ktx/bin/net show NAME
+sudo /srv/ktx/bin/web-route list
+sudo /srv/ktx/bin/web-route show NAME
+sudo /srv/ktx/bin/ssh-route list
+sudo /srv/ktx/bin/ssh-route show LOGIN
 ```
 
 ## Services
 
 ```bash
 systemctl status traefik sshpiper ssh docker rsyslog --no-pager
-journalctl -u traefik -n 100 --no-pager
-journalctl -u sshpiper -n 100 --no-pager
+sudo journalctl -u traefik -n 100 --no-pager
+sudo journalctl -u sshpiper -n 100 --no-pager
 ```
 
 ## Network/listeners
 
 ```bash
-ss -lntup
+sudo ss -lntup
 ip route
-docker network ls
-docker network inspect NETWORK
+sudo docker network ls
+sudo docker network inspect NETWORK
 ```
 
 ## Docker
 
 ```bash
-docker ps
-docker ps -a
-docker stats
-docker system df
+sudo docker ps
+sudo docker ps -a
+sudo docker stats
+sudo docker system df
 ```
 
 ## Firewall
 
 ```bash
-ufw status verbose
+sudo ufw status verbose
 ```

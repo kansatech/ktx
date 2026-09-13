@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""Manage explicit Traefik HTTP backends and HTTPS host routes."""
+import argparse
+import ipaddress
+import os
+import pathlib
+import re
+import sys
+import tempfile
+
+DIRECTORY = pathlib.Path('/srv/ktx/config/traefik/dynamic')
+NAME_RE = re.compile(r'[a-z0-9][a-z0-9-]{0,62}')
+HOST_RE = re.compile(r'(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}')
+
+
+def render(name, address, port, domains):
+    if not NAME_RE.fullmatch(name):
+        raise ValueError('Invalid route name.')
+    ip = ipaddress.ip_address(address)
+    if not 1 <= port <= 65535:
+        raise ValueError('Invalid backend port.')
+    hosts = list(dict.fromkeys(domain.lower().rstrip('.') for domain in domains))
+    if not hosts or any(not HOST_RE.fullmatch(host) for host in hosts):
+        raise ValueError('Use normal DNS hostnames; wildcard certificates are outside the HTTP-01 baseline.')
+    rule = ' || '.join(f'Host(`{host}`)' for host in hosts)
+    backend = f'[{ip}]' if ip.version == 6 else str(ip)
+    # Quote names so numeric-looking names remain YAML string keys.
+    return f'''http:
+  routers:
+    "{name}":
+      rule: "{rule}"
+      entryPoints:
+        - websecure
+      service: "{name}"
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    "{name}":
+      loadBalancer:
+        servers:
+          - url: "http://{backend}:{port}"
+'''
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest='command', required=True)
+    add = commands.add_parser('add')
+    add.add_argument('name')
+    add.add_argument('ip')
+    add.add_argument('port', type=int)
+    add.add_argument('domains', nargs='+')
+    for command in ('show', 'remove'):
+        commands.add_parser(command).add_argument('name')
+    commands.add_parser('list')
+    args = parser.parse_args()
+    if os.geteuid() != 0:
+        sys.exit('Run web-route with sudo.')
+    if not DIRECTORY.is_dir():
+        sys.exit('Traefik configuration is missing; complete Host Core installation first.')
+    if args.command == 'list':
+        for path in sorted(DIRECTORY.glob('50-*.yml')):
+            print(path.stem[3:])
+        return
+    if not NAME_RE.fullmatch(args.name):
+        sys.exit('Invalid route name.')
+    path = DIRECTORY / f'50-{args.name}.yml'
+    if path.is_symlink():
+        sys.exit(f'Refusing symlink: {path}')
+    if args.command == 'show':
+        print(path.read_text(), end='')
+    elif args.command == 'remove':
+        path.unlink(missing_ok=True)
+        print(f'Removed {args.name}.')
+    else:
+        content = render(args.name, args.ip, args.port, args.domains)
+        descriptor, filename = tempfile.mkstemp(prefix='.web-route-', dir=DIRECTORY)
+        temporary = pathlib.Path(filename)
+        try:
+            with os.fdopen(descriptor, 'w') as stream:
+                stream.write(content)
+            temporary.chmod(0o644)
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
+        print(f'Wrote {path}; Traefik reloads it automatically.')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (OSError, ValueError) as error:
+        sys.exit(f'web-route: {error}')

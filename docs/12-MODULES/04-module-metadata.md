@@ -12,7 +12,7 @@ image: ktx/webphp85
 version: 1.0.0
 
 network:
-  primary_ip: ".2"
+  primary_ip: ".2"  # Offset from the subnet base, not a literal address.
 
 ports:
   - name: http
@@ -20,7 +20,7 @@ ports:
 
 ingress:
   web: true
-  ssh: true
+  ssh: false
 
 persistent_state:
   - /srv/ktx/data/<instance>

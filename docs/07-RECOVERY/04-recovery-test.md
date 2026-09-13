@@ -9,7 +9,7 @@ On disposable infrastructure, periodically prove that you can:
 - install and prove a workstation public key;
 - run the SSHPiper cutover;
 - confirm SSHPiper owns public 22 and OpenSSH owns only `127.0.0.1:2222`;
-- confirm `ssh.socket` is inactive;
+- confirm `ssh.socket` is masked and inactive;
 - complete Host Core setup;
 - restore the protected server-specific config/secrets needed by your environment;
 - reattach a representative module and route.

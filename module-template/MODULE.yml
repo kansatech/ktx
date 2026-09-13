@@ -5,7 +5,7 @@ image: ktx/REPLACE_MODULE
 version: 0.1.0
 
 network:
-  primary_ip: ".2"
+  primary_ip: ".2"  # Offset from the subnet base; use net show's actual primary address.
 
 ports: []
 

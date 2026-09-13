@@ -7,7 +7,7 @@ Checkout the previous known-good Host Core tag:
 ```bash
 git -C /srv/ktx fetch --tags
 git -C /srv/ktx checkout --detach PREVIOUS_TAG
-sudo /srv/ktx/bin/ktx-apply-host
+sudo /srv/ktx/bin/apply-host
 ```
 
 ## Native component rollback
@@ -15,9 +15,9 @@ sudo /srv/ktx/bin/ktx-apply-host
 The previous tag also contains the previous pinned Traefik/SSHPiper version. Reinstall only the component being rolled back:
 
 ```bash
-sudo /srv/ktx/bin/ktx-install-native traefik
+sudo /srv/ktx/bin/install-native traefik
 # or
-sudo /srv/ktx/bin/ktx-install-native sshpiper
+sudo /srv/ktx/bin/install-native sshpiper
 ```
 
 Then restart only that service.

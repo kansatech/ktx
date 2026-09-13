@@ -16,7 +16,7 @@ The baseline uses HTTP-01 on entrypoint `web` (TCP 80). Traefik documents HTTP-0
 
 ## Build/dev
 
-Use Let's Encrypt staging or non-public/self-signed/test domains while repeatedly iterating. Do not burn production ACME rate limits during development.
+Before adding test routes, set `certificatesResolvers.letsencrypt.acme.caServer` in the ignored Traefik static configuration to `https://acme-staging-v02.api.letsencrypt.org/directory` and restart Traefik. Staging certificates are deliberately untrusted by browsers. Use a separate staging storage file (for example `/srv/ktx/data/traefik/acme-staging.json`, owned by traefik, mode 0600) so production ACME state is preserved. The default installer uses the production ACME directory; a reserved example hostname cannot receive a public certificate.
 
 ## Prod
 

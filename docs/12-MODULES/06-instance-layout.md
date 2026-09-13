@@ -27,7 +27,7 @@ module: ktx-example
 module_release: v1.2.3
 image: ktx/example:1.2.3
 network: ktx-net-ktx-example-01
-primary_ip: 172.28.x.2
+primary_ip: 172.28.0.2
 environment: prod
 ```
 

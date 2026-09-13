@@ -15,6 +15,6 @@ Current baseline:
 | Ubuntu | 24.04 LTS |
 | Traefik | 3.7.13 |
 | SSHPiper | 1.6.1 |
-| Docker Engine | approved current Docker CE package from Docker's official Ubuntu repository |
+| Docker Engine | Docker CE package offered at install time from Docker's official Ubuntu repository |
 
-Host Core update tooling installs the exact tracked Traefik/SSHPiper release and verifies the upstream release checksum.
+Host Core update tooling installs the exact tracked Traefik/SSHPiper release and verifies `host/native-checksums.sha256`, committed from the official release manifests.

@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""Check portable Host Core source without changing the host or creating caches."""
+import json
+import os
+import pathlib
+import re
+import shutil
+import subprocess
+import sys
+from urllib.parse import unquote, urlsplit
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+COMMANDS = ('init', 'init-layout', 'install-native', 'apply-host', 'host-check',
+            'net', 'repo-status', 'ssh-route', 'web-route', 'validate-repo')
+REQUIRED = ('.gitignore', '.gitattributes', 'README.md', 'INSTALL.md', 'VERSION', 'CHANGELOG.md', 'RC-REVIEW.md',
+            'host/versions.env', 'host/native-checksums.sha256', 'host/defaults/host.conf.example',
+            'host/defaults/traefik.yml.example', 'host/ssh/sshd_config',
+            'host/systemd/sshpiper.service', 'host/systemd/traefik.service',
+            'host/docker/daemon.json', 'host/rsyslog/30-ktx-remote.conf',
+            'host/logrotate/ktx-remote')
+
+
+def main():
+    failures = []
+    for name in [*REQUIRED, *(f'bin/{name}' for name in COMMANDS)]:
+        if not (ROOT / name).is_file():
+            failures.append(f'Missing {name}')
+    if (ROOT / '.git').exists():
+        result = subprocess.run(['git', '-C', str(ROOT), 'ls-files', '-co', '--exclude-standard'],
+                                check=True, text=True, stdout=subprocess.PIPE)
+        paths = sorted({ROOT / name for name in result.stdout.splitlines() if (ROOT / name).is_file()})
+    else:
+        # A release archive contains only these source roots and top-level files.
+        paths = [p for p in ROOT.iterdir() if p.is_file()]
+        for directory in ('bin', 'host', 'docs', 'module-template'):
+            paths.extend(p for p in (ROOT / directory).rglob('*') if p.is_file())
+    bash = shutil.which('bash')
+    shellcheck = shutil.which('shellcheck')
+    try:
+        import yaml
+    except ImportError:
+        yaml = None
+    counts = dict(shell=0, python=0, json=0, yaml=0, links=0)
+    for path in paths:
+        relative = path.relative_to(ROOT).as_posix()
+        content = path.read_bytes()
+        if b'\r' in content or content.startswith(b'\xef\xbb\xbf') or not content.endswith(b'\n'):
+            failures.append(f'{relative}: use UTF-8 without BOM, LF, and a final newline')
+        text = content.decode('utf-8-sig')
+        if relative.startswith('bin/'):
+            if os.name != 'nt' and not os.access(path, os.X_OK):
+                failures.append(f'{relative}: missing executable bit')
+            if text.startswith('#!/usr/bin/env python3\n'):
+                compile(text, relative, 'exec')
+                counts['python'] += 1
+            elif text.startswith('#!/usr/bin/env bash\n'):
+                if bash:
+                    subprocess.run([bash, '-n', str(path)], check=True)
+                    counts['shell'] += 1
+                if shellcheck:
+                    subprocess.run([shellcheck, str(path)], check=True)
+            else:
+                failures.append(f'{relative}: unexpected interpreter')
+        if path.suffix == '.json':
+            json.loads(text)
+            counts['json'] += 1
+        if yaml and (path.suffix in ('.yml', '.yaml') or path.name.endswith('.yml.example')):
+            yaml.safe_load(text)
+            counts['yaml'] += 1
+        if path.suffix == '.md':
+            for target in re.findall(r'\[[^\]]*\]\(([^)]+)\)', text):
+                target = target.strip('<>')
+                if urlsplit(target).scheme or target.startswith('#'):
+                    continue
+                destination = unquote(target.split('#')[0])
+                if not (path.parent / destination).exists():
+                    failures.append(f'{relative}: broken link {target}')
+                counts['links'] += 1
+    if not bash:
+        print('SKIP Bash syntax: bash is not installed.')
+    if not shellcheck:
+        print('SKIP ShellCheck: shellcheck is not installed.')
+    if not yaml:
+        print('SKIP YAML parsing: PyYAML is not installed.')
+    if os.name == 'nt':
+        print('Windows: Git executable modes must also be checked with git ls-files --stage.')
+    if failures:
+        sys.exit('\n'.join(failures))
+    print(f'Checked {len(paths)} source files: {counts}')
+    print('Portable source validation passed. This does not test Linux services, permissions, or networking.')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (OSError, ValueError, SyntaxError, subprocess.CalledProcessError) as error:
+        sys.exit(f'validate-repo: {error}')

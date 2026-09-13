@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT=/srv/ktx
+[[ $(id -u) -eq 0 ]] || { echo 'Run apply-host with sudo.' >&2; exit 1; }
+
+# Copy tracked service files. A Git checkout alone must not change live units.
+for service in traefik sshpiper; do
+  target="/etc/systemd/system/$service.service"
+  # Earlier releases linked these files into the checkout.
+  if [[ -L $target ]]; then
+    [[ $(readlink "$target") == "$ROOT/host/systemd/$service.service" ]] || {
+      echo "Unexpected symlink: $target" >&2; exit 1;
+    }
+    rm "$target"
+  fi
+  install -o root -g root -m 0644 "$ROOT/host/systemd/$service.service" "$target"
+done
+for entry in rsyslog.d/30-ktx-remote.conf logrotate.d/ktx-remote; do
+  case "$entry" in
+    rsyslog.d/*) source="$ROOT/host/rsyslog/30-ktx-remote.conf" ;;
+    logrotate.d/*) source="$ROOT/host/logrotate/ktx-remote" ;;
+  esac
+  if [[ -L /etc/$entry ]]; then
+    [[ $(readlink "/etc/$entry") == "$source" ]] || { echo "Unexpected symlink: /etc/$entry" >&2; exit 1; }
+    rm "/etc/$entry"
+  fi
+  install -o root -g root -m 0644 "$source" "/etc/$entry"
+done
+
+# Remove only aliases installed by old KTX releases. Short names stay in bin/;
+# never install a global command named init or net.
+for name in init init-layout apply-host install-native host-check net ssh-route web-route repo-status validate-repo; do
+  alias="/usr/local/sbin/ktx-$name"
+  if [[ -L $alias && $(readlink "$alias") == "$ROOT/bin/ktx-$name" ]]; then
+    rm "$alias"
+  fi
+done
+systemctl daemon-reload
+echo 'Host units and logging configuration copied; no services restarted.'
+echo 'Validate configs, then restart only affected services. Use /srv/ktx/bin/ commands.'

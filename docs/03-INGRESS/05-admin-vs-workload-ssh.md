@@ -51,15 +51,17 @@ Because SSHPiper sits in front of host SSH, an SSHPiper failure can block normal
 After the SSHPiper cutover, public clients authenticate to the **`ktx` SSHPiper route**, not directly to loopback OpenSSH. Put the new public key in a temporary file on the server and authorize it with:
 
 ```bash
-sudo ktx-ssh-route authorize ktx /path/to/new-key.pub
+sudo /srv/ktx/bin/ssh-route authorize ktx /path/to/new-key.pub
 ```
 
 Or:
 
 ```bash
-cat /path/to/new-key.pub | sudo ktx-ssh-route authorize ktx -
+cat /path/to/new-key.pub | sudo /srv/ktx/bin/ssh-route authorize ktx -
 ```
 
 Do not replace the route's `id_rsa`; that is SSHPiper's upstream mapping key, not a workstation key.
 
 No SSHPiper restart is required when changing route `authorized_keys`.
+
+Bootstrap workstation keys remain in native OpenSSH authorized_keys for recovery, alongside the loopback-restricted mapping public key. Revoking a key at SSHPiper only revokes public proxy access; remove the same workstation key from native authorized_keys too if it must no longer authorize local/recovery access. Never remove the mapping key while the route still uses it.

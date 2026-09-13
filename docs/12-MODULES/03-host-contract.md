@@ -13,8 +13,8 @@ The module may not assume Docker socket access from its containers.
 Allocate:
 
 ```bash
-sudo ktx-net create INSTANCE
-sudo ktx-net show INSTANCE
+sudo /srv/ktx/bin/net create INSTANCE
+sudo /srv/ktx/bin/net show INSTANCE
 ```
 
 Each workload receives a `/28`. The baseline convention reserves:
@@ -31,7 +31,7 @@ A module documents any additional static addresses it consumes.
 Register:
 
 ```bash
-sudo ktx-web-route add ROUTE BACKEND_IP BACKEND_PORT DOMAIN [DOMAIN...]
+sudo /srv/ktx/bin/web-route add ROUTE BACKEND_IP BACKEND_PORT DOMAIN [DOMAIN...]
 ```
 
 The module does not edit Traefik static configuration.
@@ -41,7 +41,7 @@ The module does not edit Traefik static configuration.
 Register through:
 
 ```bash
-sudo ktx-ssh-route ...
+sudo /srv/ktx/bin/ssh-route ...
 ```
 
 The module does not publish arbitrary SSH ports or edit host sshd.
@@ -73,3 +73,5 @@ A normal module must not require:
 - a shared flat network with unrelated workloads.
 
 An exception requires explicit Host Core architecture review.
+
+Address notation `.1`/`.2` means subnet base + 1/+2. Always consume the `gateway` and `primary` values reported by `/srv/ktx/bin/net show`; later /28 allocations do not necessarily end in .1/.2. These host commands run through sudo, not from inside a workload.

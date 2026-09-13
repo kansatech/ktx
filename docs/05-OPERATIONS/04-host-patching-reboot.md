@@ -3,7 +3,7 @@
 Before patching/rebooting production:
 
 ```bash
-sudo ktx-host-check
+sudo /srv/ktx/bin/host-check
 sudo docker ps
 sudo df -h
 sudo free -h
@@ -17,7 +17,7 @@ After reboot:
 
 ```bash
 ssh ktx@SERVER
-sudo ktx-host-check
+sudo /srv/ktx/bin/host-check
 ```
 
 Verify in order:

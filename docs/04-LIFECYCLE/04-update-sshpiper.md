@@ -1,11 +1,11 @@
 # Update SSHPiper
 
 1. Review the desired SSHPiper release.
-2. Change `SSHPIPER_VERSION` in `host/versions.env` on build.
+2. Change `SSHPIPER_VERSION` in `host/versions.env` and its official archive hashes in `host/native-checksums.sha256` on build.
 3. Install it with:
 
    ```bash
-   sudo ./bin/ktx-install-native sshpiper
+   sudo ./bin/install-native sshpiper
    ```
 
 4. Test the reserved `ktx` host route plus representative workload routes, public-key authentication, mapping keys, strict host-key checking, and SFTP/SCP where used.

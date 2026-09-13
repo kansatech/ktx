@@ -1,0 +1,351 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+ROOT=/srv/ktx
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+usage() {
+  cat <<'EOF'
+Usage (Ubuntu 24.04, /srv/ktx checkout):
+  sudo /srv/ktx/bin/init bootstrap --hostname HOST --env build|dev|prod
+  sudo /srv/ktx/bin/init secure-ssh
+  sudo /srv/ktx/bin/init finish --acme-email EMAIL
+  sudo /srv/ktx/bin/init status
+
+The sudo-capable ktx account must already exist. See INSTALL.md.
+Bootstrap permits temporary password SSH. Prove a workstation key before
+secure-ssh. Keep console access and verify a NEW external login at cutover.
+EOF
+}
+
+fail() { echo "ERROR: $*" >&2; exit 1; }
+trap 'echo "ERROR: init failed at line $LINENO. Read the command output above; use the provider console if SSH is unavailable." >&2' ERR
+
+validate_admin() {
+  id ktx >/dev/null 2>&1 || fail 'The ktx account must already exist.'
+  id -nG ktx | tr ' ' '\n' | grep -qx sudo || fail 'ktx must belong to sudo.'
+  [[ $(getent passwd ktx | cut -d: -f6) == /home/ktx ]] || fail 'ktx must have home /home/ktx.'
+  [[ $(stat -c %U /home/ktx) == ktx ]] || fail '/home/ktx must be owned by ktx.'
+  [[ ! -L /home/ktx/.ssh && ! -L /home/ktx/.ssh/authorized_keys ]] || fail 'Administrator SSH paths must not be symlinks.'
+}
+
+set_conf() {
+  # Only validated, single-line values enter this non-shell configuration file.
+  local key=$1 value=$2
+  sed -i "/^${key}=/d" "$ROOT/config/host.conf"
+  printf '%s=%s\n' "$key" "$value" >> "$ROOT/config/host.conf"
+}
+
+bootstrap() {
+  local host='' environment=''
+  while (($#)); do
+    case "$1" in
+      --hostname) (($# >= 2)) || fail 'Missing hostname.'; host=$2; shift 2 ;;
+      --env) (($# >= 2)) || fail 'Missing environment.'; environment=$2; shift 2 ;;
+      *) fail "Unknown bootstrap option: $1" ;;
+    esac
+  done
+  [[ $host =~ ^[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?$ ]] || fail 'Use a lowercase hostname without spaces.'
+  [[ $environment =~ ^(build|dev|prod)$ ]] || fail 'Environment must be build, dev, or prod.'
+  [[ ! -e $ROOT/config/sshpiper/routes/ktx ]] || fail 'SSH route exists. Bootstrap is not an upgrade command.'
+  [[ ! -e $ROOT/config/bootstrap.complete ]] || fail 'Bootstrap already completed; follow INSTALL.md from key verification.'
+  validate_admin
+  passwd -S ktx | awk '{exit ($2 == "P" ? 0 : 1)}' || fail 'Set the local ktx password for bootstrap and sudo first.'
+
+  echo 'Installing host prerequisites from Ubuntu repositories...'
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    curl gnupg jq rsync zstd unzip tar openssh-server chrony rsyslog \
+    logrotate ufw acl python3 mc netcat-openbsd dnsutils
+  "$ROOT/bin/init-layout"
+  install -d -o ktx -g ktx -m 0700 /home/ktx/.ssh
+  touch /home/ktx/.ssh/authorized_keys
+  chown ktx:ktx /home/ktx/.ssh/authorized_keys
+  chmod 0600 /home/ktx/.ssh/authorized_keys
+  if [[ ! -e $ROOT/recovery/hosts-before-bootstrap ]]; then
+    cp -a /etc/hosts "$ROOT/recovery/hosts-before-bootstrap"
+  fi
+  # Ubuntu's local hostname entry must follow /etc/hostname for sudo resolution.
+  sed -i '/^127\.0\.1\.1[[:space:]]/d' /etc/hosts
+  printf '127.0.1.1 %s %s\n' "$host" "${host%%.*}" >> /etc/hosts
+  hostnamectl set-hostname "$host"
+  timedatectl set-timezone UTC
+  set_conf KTX_ENV "$environment"
+  set_conf KTX_HOST "$host"
+
+  echo 'Backing up SSH configuration before installing the temporary bootstrap policy...'
+  local backup="$ROOT/recovery/ssh-before-bootstrap"
+  if [[ ! -d $backup ]]; then
+    install -d -m 0700 "$backup"
+    cp -a /etc/ssh/sshd_config "$backup/sshd_config"
+    cp -a /etc/ssh/sshd_config.d "$backup/sshd_config.d"
+    cp -a /etc/default/ssh "$backup/default-ssh"
+  fi
+  # A complete policy avoids first-value-wins and additive ListenAddress drop-ins.
+  sed -e 's/^Port 2222$/Port 22/' \
+      -e 's/^ListenAddress 127.0.0.1$/ListenAddress 0.0.0.0\nListenAddress ::/' \
+      -e 's/^PasswordAuthentication no$/PasswordAuthentication yes/' \
+      -e 's/^AuthenticationMethods publickey$/AuthenticationMethods any/' \
+      "$ROOT/host/ssh/sshd_config" > "$ROOT/tmp/sshd-bootstrap"
+  install -d -m 0755 /run/sshd
+  ssh-keygen -A
+  /usr/sbin/sshd -t -f "$ROOT/tmp/sshd-bootstrap"
+  install -o root -g root -m 0644 "$ROOT/tmp/sshd-bootstrap" /etc/ssh/sshd_config
+  printf 'SSHD_OPTS=\n' > /etc/default/ssh
+
+  echo 'Using direct ssh.service; disabling Ubuntu socket activation and its generator...'
+  install -d -m 0755 /etc/systemd/system-generators
+  ln -sfn /dev/null /etc/systemd/system-generators/sshd-socket-generator
+  if [[ -f /etc/systemd/system/ssh.service.d/00-socket.conf ]]; then
+    mv /etc/systemd/system/ssh.service.d/00-socket.conf "$backup/00-socket.conf"
+  fi
+  systemctl daemon-reload
+  [[ $(systemctl show ssh.service -p KillMode --value) == process ]] || fail 'ssh.service must use KillMode=process to preserve existing sessions.'
+  systemctl disable --now ssh.socket
+  systemctl mask ssh.socket
+  systemctl enable ssh.service
+  systemctl restart ssh.service
+  systemctl enable --now chrony rsyslog
+  touch "$ROOT/config/bootstrap.complete"
+  echo 'Bootstrap complete: public OpenSSH on 22, only ktx may log in; temporary password authentication enabled.'
+  echo 'Install and prove your workstation key in a NEW connection before secure-ssh. See INSTALL.md.'
+}
+
+rollback_ssh() {
+  local result=$?
+  trap - EXIT HUP INT TERM ERR
+  if [[ ${ssh_committed:-no} != yes ]]; then
+    echo 'SSH cutover was not confirmed. Restoring pre-cutover OpenSSH on public 22...' >&2
+    systemctl stop ktx-ssh-preflight.service 2>/dev/null || true
+    systemctl disable --now sshpiper.service || true
+    install -o root -g root -m 0644 "$ROOT/recovery/sshd-before-cutover" /etc/ssh/sshd_config
+    /usr/sbin/sshd -t && systemctl restart ssh.service || echo 'Rollback failed: use provider console and the saved configuration.' >&2
+    result=1
+  fi
+  exit "$result"
+}
+
+secure_ssh() {
+  (($# == 0)) || fail 'secure-ssh takes no options.'
+  [[ -t 0 ]] || fail 'Run secure-ssh interactively; it requires confirmation after an external login.'
+  [[ -f $ROOT/config/bootstrap.complete ]] || fail 'Complete bootstrap first.'
+  [[ ! -f $ROOT/config/ssh.complete ]] || fail 'SSH cutover already completed. Use lifecycle instructions for updates.'
+  validate_admin
+  local auth=/home/ktx/.ssh/authorized_keys
+  local route="$ROOT/config/sshpiper/routes/ktx"
+  [[ -s $auth ]] || fail 'Install and prove a workstation public key first.'
+  [[ $(systemctl show ssh.service -p KillMode --value) == process ]] || fail 'ssh.service must use KillMode=process.'
+  [[ $(systemctl is-enabled ssh.socket) == masked ]] || fail 'Bootstrap must mask ssh.socket first.'
+
+  echo 'Preparing SSHPiper and its route while public OpenSSH remains available...'
+  "$ROOT/bin/install-native" sshpiper
+  if ! id sshpiper >/dev/null 2>&1; then
+    useradd --system --user-group --home-dir /nonexistent --shell /usr/sbin/nologin sshpiper
+  fi
+  [[ $(id -u sshpiper) -ne 0 && $(id -gn sshpiper) == sshpiper ]] || fail 'Invalid sshpiper service account.'
+  [[ $(id -nG sshpiper) == sshpiper ]] || fail 'sshpiper must not belong to supplementary groups.'
+  [[ $(getent passwd sshpiper | cut -d: -f7) =~ /(nologin|false)$ ]] || fail 'sshpiper must have a non-login shell.'
+  install -d -o root -g root -m 0755 "$ROOT/config/sshpiper"
+  install -d -o sshpiper -g sshpiper -m 0700 "$ROOT/config/sshpiper/routes" "$ROOT/secrets/sshpiper"
+  setfacl -m u:sshpiper:--x "$ROOT/secrets"
+  if [[ ! -d $route ]]; then
+    "$ROOT/bin/ssh-route" init ktx ktx 127.0.0.1 2222
+  fi
+  [[ $(cat "$route/sshpiper_upstream") == ktx@127.0.0.1:2222 ]] || fail 'Reserved route has the wrong upstream.'
+  # On retry, never copy the mapping key into downstream authorization.
+  if [[ ! -s $route/authorized_keys ]]; then
+    python3 - "$auth" "$route/id_rsa.pub" "$route/authorized_keys" <<'PY'
+import pathlib
+import sys
+source, mapping, target = map(pathlib.Path, sys.argv[1:])
+public = mapping.read_text().split()[1]
+lines = [line for line in source.read_text().splitlines() if public not in line.split()]
+if not any(line.strip() and not line.startswith('#') for line in lines):
+    sys.exit('No workstation keys remain after excluding the mapping key.')
+target.write_text('\n'.join(lines) + '\n')
+PY
+  fi
+  python3 - "$ROOT/bin/ssh-route" "$route/authorized_keys" <<'PY'
+import pathlib
+import runpy
+import sys
+route_tool = runpy.run_path(sys.argv[1])
+route_tool['public_keys'](pathlib.Path(sys.argv[2]).read_text())
+PY
+  local mapping
+  mapping=$(cat "$route/id_rsa.pub")
+  if ! grep -Fq "$(awk '{print $2}' "$route/id_rsa.pub")" "$auth"; then
+    printf '\nfrom="127.0.0.1" %s\n' "$mapping" >> "$auth"
+  fi
+  chown ktx:ktx "$auth"
+  chmod 0600 "$auth"
+  install -o sshpiper -g sshpiper -m 0600 /etc/ssh/ssh_host_ed25519_key "$ROOT/secrets/sshpiper/server_key"
+  # Pin a locally held host key, not an unauthenticated network scan.
+  printf '[127.0.0.1]:2222 %s\n' "$(ssh-keygen -y -f /etc/ssh/ssh_host_ed25519_key)" > "$route/known_hosts"
+  chown sshpiper:sshpiper "$route/authorized_keys" "$route/known_hosts"
+  chmod 0600 "$route/authorized_keys" "$route/known_hosts"
+  for file in "$ROOT/secrets/sshpiper/server_key" "$route"/{sshpiper_upstream,authorized_keys,id_rsa,known_hosts}; do
+    runuser -u sshpiper -- test -r "$file" || fail "SSHPiper cannot read $file; inspect namei -l and getfacl."
+  done
+  if [[ -L /etc/systemd/system/sshpiper.service ]]; then
+    [[ $(readlink /etc/systemd/system/sshpiper.service) == "$ROOT/host/systemd/sshpiper.service" ]] || fail 'Unexpected SSHPiper unit symlink.'
+    rm /etc/systemd/system/sshpiper.service
+  fi
+  install -o root -g root -m 0644 "$ROOT/host/systemd/sshpiper.service" /etc/systemd/system/sshpiper.service
+  systemctl daemon-reload
+  [[ $(systemctl show sshpiper.service -p User --value) == sshpiper ]] || fail 'Unexpected SSHPiper unit User override.'
+  [[ $(systemctl show sshpiper.service -p Group --value) == sshpiper ]] || fail 'Unexpected SSHPiper unit Group override.'
+  /usr/sbin/sshd -t -f "$ROOT/host/ssh/sshd_config"
+  cp -a /etc/ssh/sshd_config "$ROOT/recovery/sshd-before-cutover"
+  local ssh_committed=no
+  trap rollback_ssh EXIT
+  trap 'exit 1' HUP INT TERM
+
+  echo 'Testing loopback OpenSSH and the mapping key before releasing public port 22...'
+  systemd-run --unit=ktx-ssh-preflight --collect \
+    /usr/sbin/sshd -D -f "$ROOT/host/ssh/sshd_config" -o PidFile=none
+  local ready=no
+  for attempt in {1..10}; do
+    echo "Loopback authentication check $attempt/10"
+    if runuser -u sshpiper -- ssh -F /dev/null -o BatchMode=yes -o IdentitiesOnly=yes \
+        -o StrictHostKeyChecking=yes -o ConnectTimeout=2 \
+        -o UserKnownHostsFile="$route/known_hosts" -i "$route/id_rsa" \
+        -p 2222 ktx@127.0.0.1 true; then
+      ready=yes
+      break
+    fi
+    sleep 1
+  done
+  [[ $ready == yes ]] || fail 'Loopback mapping-key authentication failed; see journalctl -u ktx-ssh-preflight.'
+  systemctl stop ktx-ssh-preflight.service
+
+  echo 'Moving OpenSSH to 127.0.0.1:2222 and starting SSHPiper on public 22...'
+  install -o root -g root -m 0644 "$ROOT/host/ssh/sshd_config" /etc/ssh/sshd_config
+  systemctl restart ssh.service
+  systemctl enable --now sshpiper.service
+  sleep 2
+  "$ROOT/bin/host-check" --ssh-only
+  echo 'From a SECOND workstation terminal, prove a new key-only ssh ktx@SERVER login.'
+  echo 'Keep this terminal open. Type VERIFIED here within 180 seconds after that login succeeds.'
+  echo 'Timeout, interruption, or failed checks restore the pre-cutover public OpenSSH policy.'
+  local answer=''
+  read -r -t 180 answer || fail 'External login confirmation timed out.'
+  [[ $answer == VERIFIED ]] || fail 'External login was not confirmed.'
+  touch "$ROOT/config/ssh.complete"
+  ssh_committed=yes
+  trap - EXIT HUP INT TERM
+  echo 'SSH cutover confirmed. Continue with init finish.'
+}
+
+install_docker() {
+  local package
+  for package in docker.io docker-compose docker-compose-v2 docker-doc docker-buildx podman-docker containerd runc; do
+    if dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -qx 'install ok installed'; then
+      fail "Conflicting package $package is installed. Review and remove it before finish."
+    fi
+  done
+  if ! dpkg-query -W -f='${Status}' docker-ce 2>/dev/null | grep -qx 'install ok installed'; then
+    echo 'Installing Docker CE and Compose from the official Ubuntu repository...'
+    install -d -m 0755 /etc/apt/keyrings
+    curl --fail --show-error --location https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    chmod 0644 /etc/apt/keyrings/docker.asc
+    cat > /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: noble
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  fi
+  if [[ -e /etc/docker/daemon.json ]] && ! cmp -s "$ROOT/host/docker/daemon.json" /etc/docker/daemon.json; then
+    fail 'Existing /etc/docker/daemon.json differs. Reconcile it with host/docker/daemon.json before continuing.'
+  fi
+  install -d -m 0755 /etc/docker
+  dockerd --validate --config-file="$ROOT/host/docker/daemon.json"
+  install -o root -g root -m 0644 "$ROOT/host/docker/daemon.json" /etc/docker/daemon.json
+  systemctl enable docker
+  systemctl restart docker
+  docker compose version
+}
+
+finish() {
+  [[ $# == 2 && $1 == --acme-email ]] || fail 'Usage: init finish --acme-email EMAIL'
+  local email=$2 pool
+  [[ $email =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]] || fail 'Supply a valid ACME email address.'
+  [[ -f $ROOT/config/ssh.complete ]] || fail 'Complete and externally confirm secure-ssh first.'
+  [[ ! -e $ROOT/config/finish.complete ]] || fail 'Installation already completed; use lifecycle instructions.'
+  "$ROOT/bin/host-check" --ssh-only
+  pool=$(awk -F= '$1 == "KTX_DOCKER_POOL" {print $2}' "$ROOT/config/host.conf")
+  python3 - "$pool" <<'PY'
+import ipaddress
+import sys
+pool = ipaddress.ip_network(sys.argv[1])
+if pool.version != 4 or not 16 <= pool.prefixlen <= 28 or not pool.is_private:
+    sys.exit('KTX_DOCKER_POOL must be a private IPv4 /16 through /28; check for host/LAN/VPN overlap.')
+PY
+  echo 'Applying UFW before starting web ingress or the syslog receiver...'
+  ufw default deny incoming
+  ufw default allow outgoing
+  ufw allow 22/tcp
+  ufw allow 80/tcp
+  ufw allow 443/tcp
+  ufw allow in on 'ktx+' from "$pool" to any port 514 proto tcp
+  ufw --force enable
+
+  install_docker
+  "$ROOT/bin/install-native" traefik
+  if ! id traefik >/dev/null 2>&1; then
+    useradd --system --user-group --home-dir /nonexistent --shell /usr/sbin/nologin traefik
+  fi
+  [[ $(id -u traefik) -ne 0 && $(id -gn traefik) == traefik ]] || fail 'Invalid traefik service account.'
+  [[ $(id -nG traefik) == traefik ]] || fail 'traefik must not belong to supplementary groups.'
+  [[ $(getent passwd traefik | cut -d: -f7) =~ /(nologin|false)$ ]] || fail 'traefik must have a non-login shell.'
+  setfacl -m u:traefik:--x,u:syslog:--x "$ROOT/logs"
+  install -d -o root -g traefik -m 0750 "$ROOT/config/traefik" "$ROOT/config/traefik/dynamic"
+  install -d -o traefik -g traefik -m 0750 "$ROOT/data/traefik" "$ROOT/logs/traefik"
+  install -d -o syslog -g adm -m 0750 "$ROOT/logs/remote"
+  if [[ ! -e $ROOT/config/traefik/traefik.yml ]]; then
+    sed "s/__KTX_ACME_EMAIL__/$email/g" "$ROOT/host/defaults/traefik.yml.example" > "$ROOT/config/traefik/traefik.yml"
+    set_conf KTX_ACME_EMAIL "$email"
+  else
+    echo 'Preserving existing Traefik static configuration and its ACME email; inspect it before continuing.'
+  fi
+  chown root:traefik "$ROOT/config/traefik/traefik.yml"
+  chmod 0640 "$ROOT/config/traefik/traefik.yml"
+  touch "$ROOT/data/traefik/acme.json"
+  chown traefik:traefik "$ROOT/data/traefik/acme.json"
+  chmod 0600 "$ROOT/data/traefik/acme.json"
+  runuser -u traefik -- test -r "$ROOT/config/traefik/traefik.yml"
+  runuser -u traefik -- test -w "$ROOT/logs/traefik"
+  runuser -u syslog -- test -w "$ROOT/logs/remote"
+  "$ROOT/bin/apply-host"
+  rsyslogd -N1
+  logrotate --debug /etc/logrotate.d/ktx-remote
+  systemctl restart rsyslog
+  systemctl enable traefik
+  systemctl restart traefik
+  sleep 2
+  "$ROOT/bin/host-check"
+  touch "$ROOT/config/finish.complete"
+  echo 'Host Core installation complete. Review UFW/provider rules and external acceptance checks in INSTALL.md.'
+}
+
+[[ ${1:-} != --help && ${1:-} != -h && $# -gt 0 ]] || { usage; exit 0; }
+[[ $(id -u) -eq 0 ]] || fail 'Run with sudo.'
+# shellcheck source=/dev/null
+. /etc/os-release
+[[ $ID == ubuntu && $VERSION_ID == 24.04 ]] || fail 'KTX targets Ubuntu 24.04 LTS.'
+# Prevent two install phases from changing SSH/configuration concurrently.
+exec 9>/run/lock/ktx-init.lock
+flock -n 9 || fail 'Another init command is running.'
+phase=$1
+shift
+case "$phase" in
+  bootstrap) bootstrap "$@" ;;
+  secure-ssh) secure_ssh "$@" ;;
+  finish) finish "$@" ;;
+  status) (($# == 0)) || fail 'status takes no options.'; "$ROOT/bin/host-check" ;;
+  *) usage; exit 2 ;;
+esac

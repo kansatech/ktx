@@ -5,10 +5,10 @@ df -h
 df -i
 free -h
 vmstat 1 10
-dmesg -T | grep -i -E 'oom|killed process'
-docker stats --no-stream
-docker system df
-du -xh /srv/ktx --max-depth=2 | sort -h | tail -30
+sudo dmesg -T | grep -i -E 'oom|killed process'
+sudo docker stats --no-stream
+sudo docker system df
+sudo du -xh /srv/ktx --max-depth=2 | sort -h | tail -30
 ```
 
 Common host growth:

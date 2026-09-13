@@ -4,9 +4,9 @@ Check:
 
 ```bash
 systemctl status traefik --no-pager
-journalctl -u traefik -n 200 --no-pager
-grep -iE 'acme|certificate|challenge|error' /srv/ktx/logs/traefik/traefik.log | tail -100
-ls -l /srv/ktx/data/traefik/acme.json
+sudo journalctl -u traefik -n 200 --no-pager
+sudo grep -iE 'acme|certificate|challenge|error' /srv/ktx/logs/traefik/traefik.log | tail -100
+sudo ls -l /srv/ktx/data/traefik/acme.json
 ```
 
 Then verify:

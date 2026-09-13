@@ -8,7 +8,7 @@ Traefik does not need it. SSHPiper does not need it. Workloads do not get it.
 
 ## Published ports
 
-Native ingress means normal workloads use private static IPs rather than host `ports:` mappings. Any public mapping is an explicit exception and must be documented by that template pack.
+Native ingress means normal workloads use private static IPs rather than host `ports:` mappings. Any public mapping is an explicit exception and must be documented by that module.
 
 ## Docker group
 

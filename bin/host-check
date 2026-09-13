@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+set -uo pipefail
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[[ $(id -u) -eq 0 ]] || { echo 'Run host-check with sudo to inspect listener ownership.' >&2; exit 1; }
+[[ $# == 0 || ( $# == 1 && $1 == --ssh-only ) ]] || { echo 'Usage: host-check [--ssh-only]' >&2; exit 2; }
+failed=0
+ok() { printf 'OK   %s\n' "$*"; }
+bad() { printf 'FAIL %s\n' "$*"; failed=1; }
+
+services=(ssh sshpiper)
+if [[ $# == 0 ]]; then
+  services+=(docker traefik rsyslog chrony)
+fi
+for service in "${services[@]}"; do
+  if systemctl is-active --quiet "$service"; then
+    ok "$service active"
+  else
+    bad "$service inactive; journalctl -u $service -n 50 --no-pager"
+  fi
+done
+if systemctl is-active --quiet ssh.socket || [[ $(systemctl is-enabled ssh.socket) != masked ]]; then
+  bad 'ssh.socket must be masked and inactive'
+else
+  ok 'ssh.socket masked and inactive'
+fi
+
+listeners=$(ss -lntpH) || exit 1
+public_ssh=$(awk '$4 ~ /:22$/ {print}' <<< "$listeners")
+if [[ -n $public_ssh ]] && ! grep -v '"sshpiperd"' <<< "$public_ssh" >/dev/null \
+    && grep -Eq '[[:space:]](\*|\[::\]|0\.0\.0\.0):22[[:space:]]' <<< "$public_ssh"; then
+  ok 'SSHPiper alone owns public TCP 22'
+else
+  bad 'Unexpected/missing public SSH listener; inspect ss -lntp'
+fi
+host_ssh=$(awk '$4 ~ /:2222$/ || /"sshd"/ {print}' <<< "$listeners")
+if [[ $(wc -l <<< "$host_ssh") == 1 ]] \
+    && grep -Eq '[[:space:]]127\.0\.0\.1:2222[[:space:]].*"sshd"' <<< "$host_ssh"; then
+  ok 'OpenSSH owns only 127.0.0.1:2222'
+else
+  bad 'Unexpected/missing OpenSSH listener (including specific LAN/IPv6 bindings)'
+fi
+
+if ! /usr/sbin/sshd -t; then
+  bad 'OpenSSH configuration syntax'
+fi
+policy=$(/usr/sbin/sshd -T -C user=ktx,host=localhost,addr=127.0.0.1) || failed=1
+for setting in 'port 2222' 'listenaddress 127.0.0.1:2222' 'permitrootlogin no' \
+    'pubkeyauthentication yes' 'passwordauthentication no' 'kbdinteractiveauthentication no' \
+    'authenticationmethods publickey' 'allowusers ktx'; do
+  if ! grep -qx "$setting" <<< "$policy"; then
+    bad "Effective sshd policy: expected $setting"
+  fi
+done
+root_policy=$(/usr/sbin/sshd -T -C user=root,host=localhost,addr=127.0.0.1) || failed=1
+grep -qx 'permitrootlogin no' <<< "$root_policy" || bad 'Effective root SSH policy must deny login'
+route=/srv/ktx/config/sshpiper/routes/ktx
+if [[ -f $route/sshpiper_upstream && $(cat "$route/sshpiper_upstream") == ktx@127.0.0.1:2222 ]]; then
+  ok 'Reserved ktx route target'
+else
+  bad 'Missing/incorrect reserved ktx route'
+fi
+for file in "$route"/{sshpiper_upstream,authorized_keys,id_rsa,known_hosts} /srv/ktx/secrets/sshpiper/server_key; do
+  if [[ -s $file && ! -L $file ]] && [[ $(stat -c '%U:%G:%a' "$file") == sshpiper:sshpiper:600 ]] \
+      && runuser -u sshpiper -- test -r "$file"; then
+    ok "SSHPiper can read private file $file"
+  else
+    bad "SSHPiper file ownership/mode/access: $file; inspect namei -l and getfacl"
+  fi
+done
+[[ -s /home/ktx/.ssh/authorized_keys ]] || bad 'ktx upstream authorized_keys missing'
+if [[ $# == 1 ]]; then
+  exit "$failed"
+fi
+
+for port in 80 443; do
+  if awk -v port="$port" '$4 ~ ":" port "$" && /"traefik"/ {found=1} END {exit !found}' <<< "$listeners"; then
+    ok "Traefik TCP $port"
+  else
+    bad "Traefik missing on TCP $port"
+  fi
+done
+if awk '$4 ~ /:514$/ && /"rsyslogd"/ {found=1} END {exit !found}' <<< "$listeners"; then
+  ok 'rsyslog TCP 514 (verify firewall limits it to KTX bridges)'
+else
+  bad 'rsyslog TCP 514 missing'
+fi
+for entry in traefik:/srv/ktx/logs/traefik syslog:/srv/ktx/logs/remote traefik:/srv/ktx/data/traefik/acme.json; do
+  if runuser -u "${entry%%:*}" -- test -w "${entry#*:}"; then
+    ok "Service can write $entry"
+  else
+    bad "Service path permission: $entry"
+  fi
+done
+[[ $(stat -c '%U:%a' /srv/ktx/data/traefik/acme.json 2>/dev/null) == traefik:600 ]] || bad 'ACME state must be traefik-owned mode 0600'
+docker info >/dev/null 2>&1 || bad 'Docker daemon unavailable'
+docker compose version >/dev/null 2>&1 || bad 'Docker Compose plugin unavailable'
+LC_ALL=C ufw status | grep -qx 'Status: active' || bad 'UFW inactive'
+[[ -r /srv/ktx/config/host.conf ]] || bad 'host.conf missing'
+echo 'This is a local check. Also test external SSH/HTTPS, firewall reachability, and reboot behavior.'
+exit "$failed"

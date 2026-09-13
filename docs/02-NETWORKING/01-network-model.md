@@ -19,15 +19,17 @@ Each workload instance receives one `/28`:
 14 usable host addresses
 ```
 
+Addresses below are offsets from the assigned subnet base, not fixed final octets.
+For example, `172.28.0.16/28` has gateway `172.28.0.17` and primary `172.28.0.18`.
 KTX reserves:
 
 | Address | Meaning |
 |---|---|
-| `.0` | network |
-| `.1` | Docker bridge gateway / host endpoint / syslog target |
-| `.2` | template's primary service |
-| `.3-.14` | optional companion containers/services |
-| `.15` | broadcast |
+| base + 0 | network |
+| base + 1 | Docker bridge gateway / host endpoint / syslog target |
+| base + 2 | template's primary service |
+| base + 3 through 14 | optional companion containers/services |
+| base + 15 | broadcast |
 
 Example:
 
@@ -43,7 +45,7 @@ ktx-net-example
 
 ## Why `/28`
 
-It is large enough for multi-container template packs while making allocation and human inspection easy. A `/16` contains 4096 `/28` networks—far beyond this platform's expected scale.
+It is large enough for multi-container modules while making allocation and human inspection easy. A `/16` contains 4096 `/28` networks—far beyond this platform's expected scale.
 
 ## Host routing
 
@@ -51,4 +53,4 @@ The Linux host can directly reach containers on these user-defined bridge subnet
 
 ## No shared flat customer network
 
-Separate workload networks reduce lateral reachability. A template pack may create a deliberate shared/service network only when its own documentation explains why.
+Separate workload networks reduce lateral reachability. A module may create a deliberate shared/service network only when its own documentation explains why.

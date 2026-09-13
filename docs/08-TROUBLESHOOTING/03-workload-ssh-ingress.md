@@ -20,7 +20,7 @@ If Ubuntu OpenSSH owns public port 22, the Host Core SSH cutover is incomplete; 
 ## 2. Inspect the route
 
 ```bash
-sudo ktx-ssh-route show clienta
+sudo /srv/ktx/bin/ssh-route show clienta
 ```
 
 Confirm the upstream target is correct.

@@ -11,6 +11,6 @@ These are part of Host Core rather than workload modules.
 | rsyslog | `rsyslog.service` | `:514` from KTX Docker pool | Central low-overhead workload logging |
 | Chrony | `chrony.service` | normal NTP behavior | Host time |
 
-Fresh installation/configuration is scripted by `bin/ktx-init`; these documents describe the operating model, not repeated APT steps.
+Fresh installation/configuration is scripted by `bin/init`; these documents describe the operating model, not repeated APT steps.
 
-Final KTX state uses `ssh.service` directly; Ubuntu `ssh.socket` activation is disabled after the SSHPiper cutover.
+KTX uses `ssh.service` directly; bootstrap disables Ubuntu `ssh.socket` activation before the later SSHPiper cutover.

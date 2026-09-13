@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT="${KTX_ROOT:-/srv/ktx}"
+ROOT=/srv/ktx
 
 printf 'KTX checkout: '
 git -C "$ROOT" describe --tags --always --dirty

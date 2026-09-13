@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT=/srv/ktx
+[[ $# == 1 && $1 =~ ^(sshpiper|traefik)$ ]] || { echo 'Usage: install-native {sshpiper|traefik}' >&2; exit 2; }
+[[ $(id -u) -eq 0 ]] || { echo 'Run install-native with sudo.' >&2; exit 1; }
+# shellcheck source=/dev/null
+source "$ROOT/host/versions.env"
+[[ $TRAEFIK_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ && $SSHPIPER_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+case "$(uname -m)" in
+  x86_64) arch=amd64; ssh_arch=x86_64 ;;
+  aarch64) arch=arm64; ssh_arch=arm64 ;;
+  *) echo 'Supported architectures: x86_64, aarch64.' >&2; exit 1 ;;
+esac
+exec 9>/run/lock/ktx-install-native.lock
+flock -n 9 || { echo 'Another native install is running.' >&2; exit 1; }
+work=$(mktemp -d)
+trap 'rm -rf -- "$work"' EXIT
+trap 'exit 1' HUP INT TERM
+
+case "$1" in
+  sshpiper)
+    asset="sshpiperd_with_plugins_linux_${ssh_arch}.tar.gz"
+    base="https://github.com/tg123/sshpiper/releases/download/v${SSHPIPER_VERSION}"
+    members=(sshpiperd plugins/workingdir)
+    ;;
+  traefik)
+    asset="traefik_v${TRAEFIK_VERSION}_linux_${arch}.tar.gz"
+    base="https://github.com/traefik/traefik/releases/download/v${TRAEFIK_VERSION}"
+    members=(traefik)
+    ;;
+esac
+echo "Downloading $base/$asset"
+curl --fail --show-error --location "$base/$asset" -o "$work/$asset"
+# Verify exactly one checksum entry committed with this Host Core release.
+# Fetching both archive and checksum at install time would not pin the bytes.
+awk -v asset="$asset" '$2 == asset {print; count++} END {if (count != 1) exit 1}' \
+  "$ROOT/host/native-checksums.sha256" > "$work/selected.sha256"
+(cd "$work" && sha256sum --check --strict selected.sha256)
+# Extract only expected binaries. Do not search arbitrarily through an archive.
+tar --extract --gzip --file="$work/$asset" --directory="$work" \
+  --no-same-owner --no-same-permissions "${members[@]}"
+for member in "${members[@]}"; do
+  [[ -f $work/$member && ! -L $work/$member ]] || { echo "Invalid archive member: $member" >&2; exit 1; }
+done
+
+if [[ $1 == sshpiper ]]; then
+  install -d -m 0755 /usr/local/libexec/sshpiper
+  # Stage both files before replacing either; existing processes retain old inodes.
+  install -o root -g root -m 0755 "$work/sshpiperd" /usr/local/libexec/sshpiper/sshpiperd.new
+  install -o root -g root -m 0755 "$work/plugins/workingdir" /usr/local/libexec/sshpiper/workingdir.new
+  /usr/local/libexec/sshpiper/sshpiperd.new --version
+  mv -f /usr/local/libexec/sshpiper/workingdir.new /usr/local/libexec/sshpiper/workingdir
+  mv -f /usr/local/libexec/sshpiper/sshpiperd.new /usr/local/libexec/sshpiper/sshpiperd
+else
+  install -o root -g root -m 0755 "$work/traefik" /usr/local/sbin/traefik.new
+  /usr/local/sbin/traefik.new version
+  mv -f /usr/local/sbin/traefik.new /usr/local/sbin/traefik
+fi
+echo "Installed $1. No service was restarted; restart it during the approved maintenance window."

@@ -3,11 +3,11 @@
 ## Native services
 
 ```bash
-journalctl -u ssh --since today
-journalctl -u sshpiper --since today
-journalctl -u traefik --since today
-journalctl -u docker --since today
-journalctl -u rsyslog --since today
+sudo journalctl -u ssh --since today
+sudo journalctl -u sshpiper --since today
+sudo journalctl -u traefik --since today
+sudo journalctl -u docker --since today
+sudo journalctl -u rsyslog --since today
 ```
 
 Traefik files:
@@ -45,3 +45,5 @@ For public SSH:
 4. host-to-container TCP
 5. upstream host key/mapping key
 6. workload sshd/account
+
+Logrotate runs each tree as its service user. The baseline uses `copytruncate` to keep native file handles open; a small number of lines can be lost during rotation. It is not an audit-grade lossless logging guarantee. Remote syslog is TCP without authentication/TLS and is limited by UFW to the KTX bridge pool; workload-supplied host/program names are not trusted identities.

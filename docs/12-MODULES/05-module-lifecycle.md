@@ -4,7 +4,7 @@ Each module has its own release history independent of Host Core.
 
 ## Build
 
-On `ktx-build-26`:
+On `build.example.invalid`:
 
 ```bash
 cd /srv/ktx/images/ktx-MODULE
@@ -40,7 +40,7 @@ Only the targeted instances are recreated.
 Example:
 
 ```text
-Host Core              v2026.09.11-r2
+Host Core              v2026.09.11-rc.1
 ktx-webphp85           v2026.09.4
 ktx-percona84          v2026.08.2
 ```
